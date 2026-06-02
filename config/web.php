@@ -9,6 +9,7 @@ $queue = require __DIR__ . '/queue.php';
 
 $config = [
     'id' => 'basic',
+    'name' => 'SaaS Sandbox',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log', 'queue'],
     'aliases' => [
@@ -24,17 +25,8 @@ $config = [
         'cache' => [
             'class' => 'yii\redis\Cache',
         ],
-        'user' => [
-            'identityClass' => 'app\models\User',
-            'enableAutoLogin' => true,
-        ],
         'errorHandler' => [
             'errorAction' => 'site/error',
-        ],
-        'mailer' => [
-            'class' => \yii\symfonymailer\Mailer::class,
-            'viewPath' => '@app/mail',
-            'useFileTransport' => true,
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,

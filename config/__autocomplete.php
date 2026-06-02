@@ -3,15 +3,9 @@
 declare(strict_types=1);
 
 /**
- * This class only exists here for IDE (PHPStorm/Netbeans/...) autocompletion.
- * This file is never included anywhere.
- * Adjust this file to match classes configured in your application config, to enable IDE autocompletion for custom components.
- * Example: A property phpdoc can be added in `__Application` class as `@property \vendor\package\Rollbar|__Rollbar $rollbar` and adding a class in this file
- * ```php
- * // @property of \vendor\package\Rollbar goes here
- * class __Rollbar {
- * }
- * ```
+ * Файл существует только для автодополнения в IDE (PhpStorm/Netbeans/...).
+ * Нигде не подключается и не исполняется. Здесь описываются кастомные
+ * компоненты приложения, чтобы IDE подсказывала их типы у `Yii::$app->...`.
  */
 class Yii
 {
@@ -22,16 +16,11 @@ class Yii
 }
 
 /**
- * @property yii\rbac\DbManager $authManager
- * @property \yii\web\User|__WebUser $user
+ * @property \yii\db\Connection $db
+ * @property \yii\redis\Connection $redis
+ * @property \yii\redis\Cache $cache
+ * @property \yii\queue\amqp_interop\Queue $queue
  */
 class __Application
-{
-}
-
-/**
- * @property app\models\User $identity
- */
-class __WebUser
 {
 }

@@ -3,5 +3,5 @@ modules:
     enabled:
       - Asserts
       - Yii2:
-            part: [orm, email, fixtures]
+            part: [orm, fixtures]
             cleanup: false
