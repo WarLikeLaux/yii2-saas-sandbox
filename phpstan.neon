@@ -2,7 +2,7 @@ includes:
     - vendor/phpstan/phpstan-strict-rules/rules.neon
 
 parameters:
-    level: 6
+    level: 9
     phpVersion: 70400
     universalObjectCratesClasses:
         - yii\base\Component
