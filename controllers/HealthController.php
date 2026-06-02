@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace app\controllers;
 
-use app\components\HealthChecker;
+use app\components\HealthCheckerInterface;
 use Yii;
+use yii\base\Module;
 use yii\web\Controller;
 use yii\web\Response;
 
@@ -20,15 +21,31 @@ use yii\web\Response;
 class HealthController extends Controller
 {
     /**
+     * @var HealthCheckerInterface Компонент проверки связности инфраструктуры
+     */
+    private $healthChecker;
+
+    /**
+     * @param string $id Идентификатор контроллера
+     * @param Module $module Модуль, которому принадлежит контроллер
+     * @param HealthCheckerInterface $healthChecker Компонент проверки (внедряется контейнером)
+     * @param array<string, mixed> $config Дополнительная конфигурация
+     */
+    public function __construct(string $id, Module $module, HealthCheckerInterface $healthChecker, array $config = [])
+    {
+        $this->healthChecker = $healthChecker;
+        parent::__construct($id, $module, $config);
+    }
+
+    /**
      * Отдаёт состояние сервисов: JSON при ?format=json, иначе HTML-страницу.
      *
      * @return array<string, mixed>|string Данные JSON-ответа либо HTML-разметка
      */
     public function actionIndex()
     {
-        $checker = new HealthChecker();
-        $checks = $checker->run();
-        $healthy = $checker->isHealthy($checks);
+        $checks = $this->healthChecker->run();
+        $healthy = $this->healthChecker->isHealthy($checks);
 
         Yii::$app->response->statusCode = $healthy ? 200 : 503;
 
