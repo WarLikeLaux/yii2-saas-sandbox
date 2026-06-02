@@ -32,28 +32,17 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
 <header id="header">
     <?php
     NavBar::begin([
-        'brandLabel' => Yii::$app->name,
+        'brandLabel' => '<i class="bi bi-box-seam me-2"></i>' . Html::encode(Yii::$app->name),
         'brandUrl' => Yii::$app->homeUrl,
-        'options' => ['class' => 'navbar-expand-md navbar-dark bg-dark fixed-top']
+        'options' => ['class' => 'navbar-expand-md navbar-dark bg-dark fixed-top shadow-sm'],
     ]);
     echo Nav::widget([
-        'options' => ['class' => 'navbar-nav'],
+        'options' => ['class' => 'navbar-nav ms-auto'],
+        'encodeLabels' => false,
         'items' => [
-            ['label' => 'Home', 'url' => ['/site/index']],
-            ['label' => 'About', 'url' => ['/site/about']],
-            ['label' => 'Contact', 'url' => ['/site/contact']],
-            ['label' => 'Health', 'url' => ['/health/index']],
-            Yii::$app->user->isGuest
-                ? ['label' => 'Login', 'url' => ['/site/login']]
-                : '<li class="nav-item">'
-                    . Html::beginForm(['/site/logout'])
-                    . Html::submitButton(
-                        'Logout (' . Yii::$app->user->identity->username . ')',
-                        ['class' => 'nav-link btn btn-link logout']
-                    )
-                    . Html::endForm()
-                    . '</li>'
-        ]
+            ['label' => '<i class="bi bi-house-door me-1"></i>Главная', 'url' => ['/site/index']],
+            ['label' => '<i class="bi bi-activity me-1"></i>Health', 'url' => ['/health']],
+        ],
     ]);
     NavBar::end();
     ?>
@@ -69,11 +58,15 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
     </div>
 </main>
 
-<footer id="footer" class="mt-auto py-3 bg-light">
+<footer id="footer" class="mt-auto py-3 bg-dark text-light">
     <div class="container">
-        <div class="row text-muted">
-            <div class="col-md-6 text-center text-md-start">&copy; My Company <?= date('Y') ?></div>
-            <div class="col-md-6 text-center text-md-end"><?= Yii::powered() ?></div>
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-md-start small">
+                &copy; <?= Html::encode(Yii::$app->name) ?> <?= date('Y') ?>
+            </div>
+            <div class="col-md-6 text-center text-md-end small text-secondary">
+                PHP 7.4 &middot; Yii2 Basic &middot; Docker
+            </div>
         </div>
     </div>
 </footer>
