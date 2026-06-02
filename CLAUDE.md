@@ -32,28 +32,3 @@
    - Запусти `make analyze` → исправь если красное.
 5. **Самоконтроль**: перепроверь критические запреты (особенно комментарии).
 6. **Запрос проверки**: попроси пользователя проверить выполнение задачи.
-
-## 🐳 ИНФРАСТРУКТУРА И КОМАНДЫ
-
-Локальное окружение — Docker (`docker-compose.yml`):
-- **nginx** (`:8000`) → **php** (PHP 7.4-FPM, Yii2);
-- **postgres** 16 (`:5432`), **redis** 7 (`:6379`), **rabbitmq** 3 (`:5672`, админка `:15672`, guest/guest).
-
-Команды (`make help` — полный список):
-- `make up` / `make down` — поднять / остановить стек;
-- `make dev` — rector + php-cs-fixer (автоправки);
-- `make analyze` — phpstan;
-- `make test` — строго unit-тесты;
-- `make health` — проверка связности; web-аналог: `GET /health` (HTML) и `GET /health?format=json`.
-
-Как подключены сервисы:
-- БД — PostgreSQL через PDO; кэш Yii — Redis (`yii\redis\Cache`, по сокетам, ext-redis не нужно);
-- очереди — `yiisoft/yii2-queue`, драйвер `amqp_interop` поверх RabbitMQ. У драйвера есть только `queue/listen` (демон) и `queue/exec`; команд `run`/`info` нет.
-
-Неочевидные решения (не «чинить» назад):
-- контейнер php работает от пользователя хоста (`user: "UID:GID"` + юзер `app` в образе) — файлы не root;
-- `clear_env = no` в php-fpm — иначе `getenv()` в веб-запросах не видит переменные окружения;
-- `urlManager.cache = false` — иначе при недоступном Redis маршрутизация падает раньше `/health`;
-- `enqueue/*` запинены на `0.10.19` — в `0.10.25` синтаксис PHP 8, ломает 7.4;
-- phpstan: `yii\base\Component` помечен как universal object crate (магия `Yii::$app->...`); замечания шаблона Yii2 — в `phpstan-baseline.neon`;
-- unit-suite: `cleanup: false` — тесты не обращаются к БД (строго unit).
