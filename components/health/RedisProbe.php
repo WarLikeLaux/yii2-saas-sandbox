@@ -45,9 +45,12 @@ class RedisProbe implements ProbeInterface
     public function check(): string
     {
         $this->redis->executeCommand('SET', ['health:check', 'pong']);
-        $value = (string) $this->redis->executeCommand('GET', ['health:check']);
 
-        $info = (string) $this->redis->executeCommand('INFO', ['server']);
+        $rawValue = $this->redis->executeCommand('GET', ['health:check']);
+        $value = is_string($rawValue) ? $rawValue : '';
+
+        $rawInfo = $this->redis->executeCommand('INFO', ['server']);
+        $info = is_string($rawInfo) ? $rawInfo : '';
         preg_match('/redis_version:([^\r\n]+)/', $info, $matches);
 
         return 'v' . ($matches[1] ?? 'unknown') . ', set/get -> ' . $value;

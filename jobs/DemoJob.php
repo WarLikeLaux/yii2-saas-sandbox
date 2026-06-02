@@ -31,7 +31,6 @@ class DemoJob extends BaseObject implements JobInterface
     {
         Yii::info("DemoJob executed: {$this->message}", __METHOD__);
 
-        // Видно при ручном запуске воркера
         fwrite(STDOUT, "[job] {$this->message}\n");
     }
 }

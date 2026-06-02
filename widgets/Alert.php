@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace app\widgets;
 
 use Yii;
+use yii\web\Application;
 
 /**
  * Виджет рендерит flash-сообщения сессии в виде бутстраповских алертов.
@@ -56,7 +57,10 @@ class Alert extends \yii\bootstrap5\Widget
      */
     public function run()
     {
-        $session = Yii::$app->session;
+        $app = Yii::$app;
+        assert($app instanceof Application);
+        $session = $app->getSession();
+
         $appendClass = isset($this->options['class']) ? ' ' . $this->options['class'] : '';
 
         foreach (array_keys($this->alertTypes) as $type) {
