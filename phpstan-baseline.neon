@@ -7,7 +7,163 @@ parameters:
 			path: controllers/SiteController.php
 
 		-
+			message: '#^Method app\\models\\ContactForm\:\:attributeLabels\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Method app\\models\\ContactForm\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Property app\\models\\ContactForm\:\:\$body has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Property app\\models\\ContactForm\:\:\$email has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Property app\\models\\ContactForm\:\:\$name has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Property app\\models\\ContactForm\:\:\$subject has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Property app\\models\\ContactForm\:\:\$verifyCode has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Return type \(array\) of method app\\models\\ContactForm\:\:attributeLabels\(\) should be covariant with return type \(array\<string, string\>\) of method yii\\base\\Model\:\:attributeLabels\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Return type \(array\) of method app\\models\\ContactForm\:\:rules\(\) should be covariant with return type \(array\<int, array\<mixed\>\|yii\\validators\\Validator\>\) of method yii\\base\\Model\:\:rules\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: models/ContactForm.php
+
+		-
+			message: '#^Method app\\models\\LoginForm\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Method app\\models\\LoginForm\:\:validatePassword\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Method app\\models\\LoginForm\:\:validatePassword\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, app\\models\\User\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Property app\\models\\LoginForm\:\:\$_user has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Property app\\models\\LoginForm\:\:\$password has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Property app\\models\\LoginForm\:\:\$rememberMe has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Property app\\models\\LoginForm\:\:\$username has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Return type \(array\) of method app\\models\\LoginForm\:\:rules\(\) should be covariant with return type \(array\<int, array\<mixed\>\|yii\\validators\\Validator\>\) of method yii\\base\\Model\:\:rules\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: models/LoginForm.php
+
+		-
+			message: '#^Property app\\models\\User\:\:\$accessToken has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/User.php
+
+		-
+			message: '#^Property app\\models\\User\:\:\$authKey has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/User.php
+
+		-
+			message: '#^Property app\\models\\User\:\:\$id has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/User.php
+
+		-
+			message: '#^Property app\\models\\User\:\:\$password has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/User.php
+
+		-
+			message: '#^Property app\\models\\User\:\:\$username has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/User.php
+
+		-
+			message: '#^Property app\\models\\User\:\:\$users has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: models/User.php
+
+		-
 			message: '#^Unsafe usage of new static\(\)\.$#'
 			identifier: new.static
 			count: 3
 			path: models/User.php
+
+		-
+			message: '#^Property app\\widgets\\Alert\:\:\$alertTypes type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: widgets/Alert.php
+
+		-
+			message: '#^Property app\\widgets\\Alert\:\:\$closeButton type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: widgets/Alert.php

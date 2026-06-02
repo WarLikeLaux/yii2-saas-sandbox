@@ -36,7 +36,9 @@
         "codeception/verify": "^3.0 || ^2.2",
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.2",
-        "rector/rector": "^2.4"
+        "rector/rector": "^2.4",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "roave/security-advisories": "dev-latest"
     },
     "config": {
         "allow-plugins": {

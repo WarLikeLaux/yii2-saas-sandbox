@@ -15,9 +15,10 @@ $finder = PhpCsFixer\Finder::create()
     ]);
 
 return (new PhpCsFixer\Config())
-    ->setRiskyAllowed(false)
+    ->setRiskyAllowed(true)
     ->setRules([
         '@PSR12' => true,
+        'declare_strict_types' => true,
         'array_syntax' => ['syntax' => 'short'],
         'ordered_imports' => ['sort_algorithm' => 'alpha'],
         'no_unused_imports' => true,
@@ -25,5 +26,11 @@ return (new PhpCsFixer\Config())
         'single_quote' => true,
         'no_trailing_whitespace' => true,
         'blank_line_after_opening_tag' => true,
+        'binary_operator_spaces' => true,
+        'concat_space' => ['spacing' => 'one'],
+        'cast_spaces' => ['space' => 'single'],
+        'unary_operator_spaces' => true,
+        'no_extra_blank_lines' => true,
+        'whitespace_after_comma_in_array' => true,
     ])
     ->setFinder($finder);

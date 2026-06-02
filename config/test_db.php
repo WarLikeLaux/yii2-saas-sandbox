@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $db = require __DIR__ . '/db.php';
 
 $host = getenv('DB_HOST') ?: 'postgres';

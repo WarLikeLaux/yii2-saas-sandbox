@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\components;
 
 use Yii;
@@ -13,8 +15,9 @@ use Yii;
 class HealthChecker
 {
     /**
-     * @return array[] список проверок вида
-     *               ['name' => string, 'ok' => bool, 'detail' => string, 'latency_ms' => int]
+     * Выполняет все проверки инфраструктуры.
+     *
+     * @return list<array{name: string, ok: bool, detail: string, latency_ms: int}> Результаты проверок
      */
     public function run(): array
     {
@@ -26,7 +29,10 @@ class HealthChecker
     }
 
     /**
-     * @return bool true, если все проверки прошли
+     * Проверяет, что все проверки прошли успешно.
+     *
+     * @param list<array{name: string, ok: bool, detail: string, latency_ms: int}> $checks Результаты проверок
+     * @return bool true, если все сервисы доступны
      */
     public function isHealthy(array $checks): bool
     {
@@ -39,6 +45,13 @@ class HealthChecker
         return true;
     }
 
+    /**
+     * Измеряет одну проверку: вызывает пробу и засекает время выполнения.
+     *
+     * @param string $name Человекочитаемое имя сервиса
+     * @param callable(): string $probe Проба, возвращающая строку с деталями
+     * @return array{name: string, ok: bool, detail: string, latency_ms: int} Результат проверки
+     */
     private function measure(string $name, callable $probe): array
     {
         $start = microtime(true);
@@ -59,11 +72,23 @@ class HealthChecker
         ];
     }
 
+    /**
+     * Проверяет соединение с PostgreSQL и возвращает версию сервера.
+     *
+     * @return string Строка версии PostgreSQL
+     * @throws \Throwable Если соединение с БД не удалось
+     */
     private function checkPostgres(): string
     {
         return (string) Yii::$app->db->createCommand('SELECT version()')->queryScalar();
     }
 
+    /**
+     * Проверяет Redis: пишет и читает ключ, возвращает версию сервера.
+     *
+     * @return string Версия Redis и результат set/get
+     * @throws \Throwable Если соединение с Redis не удалось
+     */
     private function checkRedis(): string
     {
         Yii::$app->redis->set('health:check', 'pong');
@@ -75,10 +100,16 @@ class HealthChecker
         return 'v' . ($m[1] ?? 'unknown') . ', set/get -> ' . $value;
     }
 
+    /**
+     * Проверяет соединение с RabbitMQ через контекст yii2-queue.
+     *
+     * @return string Сообщение об успешном установлении соединения
+     * @throws \Throwable Если соединение с брокером не удалось
+     */
     private function checkRabbitmq(): string
     {
         $context = Yii::$app->queue->getContext();
-        $context->createTemporaryQueue(); // форсирует реальное соединение с брокером
+        $context->createTemporaryQueue();
         $context->close();
 
         return 'yii2-queue/amqp_interop context established';

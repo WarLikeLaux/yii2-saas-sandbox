@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controllers;
 
 use app\components\HealthChecker;
@@ -17,6 +19,11 @@ use yii\web\Response;
  */
 class HealthController extends Controller
 {
+    /**
+     * Отдаёт состояние сервисов: JSON при ?format=json, иначе HTML-страницу.
+     *
+     * @return array<string, mixed>|string Данные JSON-ответа либо HTML-разметка
+     */
     public function actionIndex()
     {
         $checker = new HealthChecker();

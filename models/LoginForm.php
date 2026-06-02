@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\models;
 
 use Yii;
@@ -18,7 +20,6 @@ class LoginForm extends Model
     public $rememberMe = true;
 
     private $_user = false;
-
 
     /**
      * @return array the validation rules.

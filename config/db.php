@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $host = getenv('DB_HOST') ?: 'postgres';
 $port = getenv('DB_PORT') ?: '5432';
 $name = getenv('DB_NAME') ?: 'yii2basic';

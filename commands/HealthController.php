@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\commands;
 
 use app\components\HealthChecker;
@@ -14,7 +16,12 @@ use yii\console\ExitCode;
  */
 class HealthController extends Controller
 {
-    public function actionIndex()
+    /**
+     * Запускает проверки и печатает результат в консоль.
+     *
+     * @return int Код возврата: 0 — все сервисы доступны, иначе 1
+     */
+    public function actionIndex(): int
     {
         $checker = new HealthChecker();
         $checks = $checker->run();

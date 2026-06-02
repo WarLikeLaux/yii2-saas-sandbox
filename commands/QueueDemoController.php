@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\commands;
 
 use app\jobs\DemoJob;
@@ -11,13 +13,17 @@ use yii\console\ExitCode;
  * Демонстрация постановки фоновой задачи в yii2-queue.
  *
  * Поставить:  ./yii queue-demo/push "текст"
- * Обработать: ./yii queue/run  (разово, до опустошения)
- *             ./yii queue/listen (демон)
- *             ./yii queue/info (состояние очереди)
+ * Обработать: ./yii queue/listen (демон)
  */
 class QueueDemoController extends Controller
 {
-    public function actionPush($message = 'hello from yii2-queue')
+    /**
+     * Публикует тестовое сообщение в очередь sandbox_jobs.
+     *
+     * @param string $message Тело сообщения
+     * @return int Код возврата (0 — успех)
+     */
+    public function actionPush(string $message = 'hello from yii2-queue'): int
     {
         $id = Yii::$app->queue->push(new DemoJob(['message' => $message]));
 
