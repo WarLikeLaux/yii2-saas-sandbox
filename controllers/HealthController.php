@@ -7,6 +7,7 @@ namespace app\controllers;
 use app\components\HealthCheckerInterface;
 use Yii;
 use yii\base\Module;
+use yii\web\Application;
 use yii\web\Controller;
 use yii\web\Response;
 
@@ -47,10 +48,14 @@ class HealthController extends Controller
         $checks = $this->healthChecker->run();
         $healthy = $this->healthChecker->isHealthy($checks);
 
-        Yii::$app->response->statusCode = $healthy ? 200 : 503;
+        $app = Yii::$app;
+        assert($app instanceof Application);
 
-        if (Yii::$app->request->get('format') === 'json') {
-            Yii::$app->response->format = Response::FORMAT_JSON;
+        $response = $app->getResponse();
+        $response->statusCode = $healthy ? 200 : 503;
+
+        if ($app->getRequest()->get('format') === 'json') {
+            $response->format = Response::FORMAT_JSON;
 
             return [
                 'status' => $healthy ? 'ok' : 'degraded',

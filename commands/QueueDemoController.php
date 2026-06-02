@@ -6,8 +6,10 @@ namespace app\commands;
 
 use app\jobs\DemoJob;
 use Yii;
+use yii\console\Application;
 use yii\console\Controller;
 use yii\console\ExitCode;
+use yii\queue\amqp_interop\Queue;
 
 /**
  * Демонстрация постановки фоновой задачи в yii2-queue.
@@ -25,7 +27,12 @@ class QueueDemoController extends Controller
      */
     public function actionPush(string $message = 'hello from yii2-queue'): int
     {
-        $id = Yii::$app->queue->push(new DemoJob(['message' => $message]));
+        $app = Yii::$app;
+        assert($app instanceof Application);
+
+        /** @var Queue $queue */
+        $queue = $app->get('queue');
+        $id = (string) $queue->push(new DemoJob(['message' => $message]));
 
         $this->stdout("Pushed job #{$id} to queue 'sandbox_jobs': {$message}\n");
 
