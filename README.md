@@ -1,6 +1,6 @@
 # SaaS Sandbox
 
-Песочница для прототипирования бэкенда B2B SaaS-сервиса: **PHP 7.4 / Yii2 Basic** в Docker, с PostgreSQL, Redis и RabbitMQ — со строгим тулчейном качества и фоновыми задачами.
+Песочница для прототипирования бэкенда SaaS-сервиса: **PHP 7.4 / Yii2 Basic** в Docker, с PostgreSQL, Redis и RabbitMQ — со строгим тулчейном качества и фоновыми задачами.
 
 ## Стек
 
