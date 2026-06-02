@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: pdo_pgsql, intl, gd, mbstring, bcmath, sockets, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Security audit
+        run: composer audit --abandoned=report
+
+      - name: Code style (php-cs-fixer)
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: Static analysis (phpstan)
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Refactoring check (rector)
+        run: vendor/bin/rector process --dry-run --no-progress-bar
+
+      - name: Unit tests
+        run: vendor/bin/codecept run unit

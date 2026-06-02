@@ -5,7 +5,7 @@ export UID := $(shell id -u)
 export GID := $(shell id -g)
 
 .DEFAULT_GOAL := help
-.PHONY: help up down build install shell health logs dev cs cs-check rector rector-check analyze test
+.PHONY: help up down build install shell health logs dev cs cs-check rector rector-check analyze test audit ci
 
 help: ## список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -50,3 +50,8 @@ analyze: ## статический анализ (phpstan)
 
 test: ## строго юнит-тесты (codeception unit)
 	$(PHP) vendor/bin/codecept run unit
+
+audit: ## аудит зависимостей на уязвимости
+	$(PHP) composer audit --abandoned=report
+
+ci: cs-check analyze rector-check test audit ## полный гейт (как в CI): стиль + анализ + рефакторинг + тесты + аудит

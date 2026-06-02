@@ -1,0 +1,10 @@
+.git
+.github
+vendor
+runtime/*
+tests/_output/*
+.idea
+.vscode
+.env
+.php-cs-fixer.cache
+.phpunit.result.cache
