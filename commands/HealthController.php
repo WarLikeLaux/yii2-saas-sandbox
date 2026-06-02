@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace app\commands;
 
-use app\components\HealthChecker;
+use app\components\HealthCheckerInterface;
+use yii\base\Module;
 use yii\console\Controller;
 use yii\console\ExitCode;
 
@@ -17,14 +18,30 @@ use yii\console\ExitCode;
 class HealthController extends Controller
 {
     /**
+     * @var HealthCheckerInterface Компонент проверки связности инфраструктуры
+     */
+    private $healthChecker;
+
+    /**
+     * @param string $id Идентификатор контроллера
+     * @param Module $module Модуль, которому принадлежит контроллер
+     * @param HealthCheckerInterface $healthChecker Компонент проверки (внедряется контейнером)
+     * @param array<string, mixed> $config Дополнительная конфигурация
+     */
+    public function __construct(string $id, Module $module, HealthCheckerInterface $healthChecker, array $config = [])
+    {
+        $this->healthChecker = $healthChecker;
+        parent::__construct($id, $module, $config);
+    }
+
+    /**
      * Запускает проверки и печатает результат в консоль.
      *
      * @return int Код возврата: 0 — все сервисы доступны, иначе 1
      */
     public function actionIndex(): int
     {
-        $checker = new HealthChecker();
-        $checks = $checker->run();
+        $checks = $this->healthChecker->run();
 
         foreach ($checks as $check) {
             if ($check['ok']) {
@@ -34,6 +51,6 @@ class HealthController extends Controller
             }
         }
 
-        return $checker->isHealthy($checks) ? ExitCode::OK : ExitCode::UNSPECIFIED_ERROR;
+        return $this->healthChecker->isHealthy($checks) ? ExitCode::OK : ExitCode::UNSPECIFIED_ERROR;
     }
 }
