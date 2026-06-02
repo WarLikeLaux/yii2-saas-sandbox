@@ -10,9 +10,4 @@ return [
     'username' => getenv('DB_USER') ?: 'yii2',
     'password' => getenv('DB_PASSWORD') ?: 'secret',
     'charset' => 'utf8',
-
-    // Schema cache options (for production environment)
-    //'enableSchemaCache' => true,
-    //'schemaCacheDuration' => 60,
-    //'schemaCache' => 'cache',
 ];

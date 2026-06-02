@@ -1,0 +1,21 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    phpVersion: 70400
+    universalObjectCratesClasses:
+        - yii\base\Component
+    paths:
+        - commands
+        - components
+        - controllers
+        - jobs
+        - models
+        - widgets
+    bootstrapFiles:
+        - vendor/yiisoft/yii2/Yii.php
+    excludePaths:
+        - runtime
+        - tests
+        - vendor

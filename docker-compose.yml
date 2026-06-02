@@ -14,9 +14,12 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    user: "${UID:-1000}:${GID:-1000}"
     container_name: saas-php
     volumes:
-      - ~/.composer-docker/cache:/root/.composer/cache:delegated
       - ./:/app:delegated
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zz-custom.ini:ro
     environment:
@@ -72,8 +75,8 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - '5672:5672'    # AMQP
-      - '15672:15672'  # веб-админка
+      - '5672:5672'
+      - '15672:15672'
     volumes:
       - rabbitmqdata:/var/lib/rabbitmq
 

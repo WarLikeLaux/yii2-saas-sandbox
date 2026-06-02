@@ -2,9 +2,9 @@
 
 namespace app\jobs;
 
+use Yii;
 use yii\base\BaseObject;
 use yii\queue\JobInterface;
-use Yii;
 
 /**
  * Демонстрационная фоновая задача для yii2-queue (драйвер amqp_interop).

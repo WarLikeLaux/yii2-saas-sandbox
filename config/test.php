@@ -21,7 +21,7 @@ return [
             'viewPath' => '@app/mail',
             // send all mails to a file by default.
             'useFileTransport' => true,
-            'messageClass' => 'yii\symfonymailer\Message'
+            'messageClass' => 'yii\symfonymailer\Message',
         ],
         'assetManager' => [
             'basePath' => __DIR__ . '/../web/assets',
