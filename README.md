@@ -1,90 +1,51 @@
 # SaaS Sandbox
 
-Песочница для прототипирования бэкенда SaaS-сервиса: **PHP 7.4 / Yii2 Basic** в Docker, с PostgreSQL, Redis и RabbitMQ — со строгим тулчейном качества и фоновыми задачами.
+Песочница для прототипов SaaS-бэкенда: PHP 7.4 + Yii2 в Docker, рядом PostgreSQL, Redis и RabbitMQ. Поднимается одной командой, со строгим тулчейном качества и заготовкой под фоновые задачи.
 
-## Стек
+## Что внутри
 
-- **Nginx** + **PHP 7.4-FPM** (Yii2 Basic)
-- **PostgreSQL 16**, **Redis 7**, **RabbitMQ 3** (management)
-- Очереди — `yiisoft/yii2-queue`, драйвер `amqp_interop` поверх RabbitMQ
-- Кэш Yii — Redis (`yii\redis\Cache`, по сокетам)
+- Nginx + PHP 7.4-FPM (Yii2 Basic)
+- PostgreSQL 16 — хранилище
+- Redis 7 — кэш Yii, по сокетам (без `ext-redis`)
+- RabbitMQ 3 — брокер для `yii2-queue` (драйвер `amqp_interop`)
 
-## Требования
-
-- Docker и Docker Compose v2
-- Linux-хост: контейнер `php` запускается от UID/GID хоста, поэтому созданные в нём файлы не принадлежат root. На другом UID/GID — `cp .env.example .env` и поправить, либо использовать `make` (он подставляет id хоста сам).
-
-## Быстрый старт
+## Запуск
 
 ```bash
-make up        # поднять весь стек
+make up        # поднять стек
 make install   # composer install внутри контейнера
-make health    # проверить связность PostgreSQL / Redis / RabbitMQ
 ```
 
-Открыть [http://localhost:8000](http://localhost:8000).
+Сайт открывается на http://localhost:8000. Состояние сервисов — на `/health` (HTML, либо `?format=json` с кодом 200/503). Админка RabbitMQ — http://localhost:15672, логин/пароль `guest`/`guest`.
 
-## Доступы
-
-| Сервис | Адрес | Доступ |
-|---|---|---|
-| Сайт | http://localhost:8000 | — |
-| Health | http://localhost:8000/health | HTML; `?format=json` — JSON, код 200/503 |
-| RabbitMQ UI | http://localhost:15672 | `guest` / `guest` |
-| PostgreSQL | `localhost:5432` | БД `yii2basic`, `yii2` / `secret` |
-| Redis | `localhost:6379` | — |
-
-> Учётные данные — дефолтные для песочницы; для прода выносятся в окружение.
+Контейнер PHP работает от UID/GID хоста, поэтому файлы не достаются root. Если id нестандартный — `cp .env.example .env` и поправь (либо просто пользуйся `make`, он подставит id сам).
 
 ## Команды
 
-| Команда | Назначение |
-|---|---|
-| `make up` / `make down` | поднять / остановить стек |
-| `make build` | пересобрать образ php |
-| `make install` | composer install в контейнере |
-| `make shell` | войти в контейнер php |
-| `make logs` | хвост логов сервисов |
-| `make health` | проверка связности (`./yii health`) |
-| `make dev` | автоправки: rector + php-cs-fixer |
-| `make cs` / `make cs-check` | стиль: исправить / проверить |
-| `make rector` / `make rector-check` | рефакторинг: применить / показать |
-| `make analyze` | статический анализ (phpstan) |
-| `make test` | строго unit-тесты |
-| `make audit` | аудит зависимостей на уязвимости |
-| `make ci` | полный гейт (как в CI) |
+Основное (`make help` — весь список):
+
+```bash
+make dev       # автоправки: rector + php-cs-fixer
+make analyze   # phpstan
+make test      # unit-тесты
+make ci        # полный гейт, как в GitHub Actions
+```
 
 ## Очереди
 
 ```bash
 make shell
-./yii queue-demo/push "сообщение"   # поставить демо-задачу
-./yii queue/listen                  # воркер (демон)
+./yii queue-demo/push "привет"   # поставить задачу
+./yii queue/listen               # запустить воркер
 ```
 
-В коде: `Yii::$app->queue->push(new \app\jobs\DemoJob(['message' => '...']))`. У драйвера `amqp_interop` есть только `queue/listen` и служебный `queue/exec` (команд `run`/`info` нет).
+Из кода: `Yii::$app->queue->push(new \app\jobs\DemoJob(['message' => '...']))`.
 
-## Качество кода
+## Качество
 
-Строгий тулчейн (запускается `make ci`, а также в GitHub Actions на каждый push):
+`make ci` (и CI на каждый push) прогоняет всё разом: `strict_types` везде, PHPStan level 6 со strict-rules, PHP-CS-Fixer (PSR-12), Rector под 7.4 и аудит зависимостей. Baseline нет — код проходит начисто.
 
-- **`declare(strict_types=1)`** обязателен во всех файлах
-- **PHPStan** level 6 + `phpstan-strict-rules` (запрет `==`/`!=`, не-bool условий, `empty()`, коротких тернарников и т.п.)
-- **PHP-CS-Fixer** — PSR-12 + правила оформления
-- **Rector** — рефакторинг с таргетом PHP 7.4
-- **composer audit** + `roave/security-advisories` — безопасность зависимостей
+## Дальше
 
-Замечания в стоковом коде шаблона Yii2 вынесены в `phpstan-baseline.neon`; новый код держится строго.
-
-## Тесты
-
-```bash
-make test
-```
-
-Запускает строго unit-suite Codeception (без обращения к БД).
-
-## Документация для разработки
-
-- `docs/ai/contract.md` — спецификация и стандарты кода (источник истины).
-- `CLAUDE.md` — краткий обзор инфраструктуры и неочевидных решений.
+- `docs/ai/contract.md` — стандарты кода и спецификация.
+- `CLAUDE.md` — инструкции для ИИ-ассистента.
