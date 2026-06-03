@@ -52,9 +52,38 @@ class MessagePageService
      */
     public function build(): MessagePageViewModel
     {
+        $chatQueryRaw = $this->requestParams->strParam('chat_q');
+        $chatQuery = $chatQueryRaw !== null ? trim($chatQueryRaw) : '';
+
+        $chatCursorTs = $this->requestParams->strParam('ch_ts');
+        $chatCursorId = $this->requestParams->intParam('ch_id');
+        $chatMode = $this->resolveChatMode();
+        $chats = $this->feed->chats(
+            self::CHAT_LIST_SIZE,
+            $chatCursorTs,
+            $chatCursorId,
+            $chatMode,
+            $chatQuery !== '' ? $chatQuery : null
+        );
+
+        $chatsTopTs = null;
+        $chatsTopId = null;
+        if ($chats !== []) {
+            $firstChat = $chats[0];
+            $chatsTopTs = is_scalar($firstChat['created_at']) ? (string) $firstChat['created_at'] : '';
+            $chatsTopId = is_numeric($firstChat['id']) ? (int) $firstChat['id'] : null;
+        }
+
+        $chatsBottomTs = null;
+        $chatsBottomId = null;
+        if ($chats !== []) {
+            $lastChat = $chats[count($chats) - 1];
+            $chatsBottomTs = is_scalar($lastChat['created_at']) ? (string) $lastChat['created_at'] : '';
+            $chatsBottomId = is_numeric($lastChat['id']) ? (int) $lastChat['id'] : null;
+        }
+
         $chatsCursorTs = $this->requestParams->strParam('ch_ts');
         $chatsCursorId = $this->requestParams->intParam('ch_id');
-        $chats = $this->feed->chats(self::CHAT_LIST_SIZE, $chatsCursorTs, $chatsCursorId);
 
         $chatId = $this->requestParams->intParam('chat_id');
         if ($chatId === null && $chats !== []) {
@@ -112,6 +141,7 @@ class MessagePageService
             $chatId,
             $chatsCursorTs,
             $chatsCursorId,
+            $chatQuery,
             $chatsNext,
             $messages,
             $query,
@@ -121,7 +151,13 @@ class MessagePageService
             $bottomTs,
             $bottomId,
             $hasNewer,
-            $hasOlder
+            $hasOlder,
+            $chatsTopTs,
+            $chatsTopId,
+            $chatsBottomTs,
+            $chatsBottomId,
+            $chatMode !== 'first' && (!($chatMode === 'last') || count($chats) === self::CHAT_LIST_SIZE),
+            $chatMode !== 'last' && count($chats) === self::CHAT_LIST_SIZE
         );
     }
 
@@ -149,6 +185,27 @@ class MessagePageService
         }
 
         return ['first', null, null];
+    }
+
+    /**
+     * Определяет режим пагинации для списка чатов.
+     *
+     * @return string Режим: `first`, `older`, `newer` или `last`
+     */
+    private function resolveChatMode(): string
+    {
+        $mode = $this->requestParams->strParam('ch_dir');
+        if ($mode === 'last') {
+            return $mode;
+        }
+
+        $cursorTs = $this->requestParams->strParam('ch_ts');
+        $cursorId = $this->requestParams->intParam('ch_id');
+        if (($mode === 'newer' || $mode === 'older') && $cursorTs !== null && $cursorId !== null) {
+            return $mode;
+        }
+
+        return 'first';
     }
 
 }
