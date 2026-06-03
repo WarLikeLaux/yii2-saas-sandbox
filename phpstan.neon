@@ -12,6 +12,7 @@ parameters:
         - controllers
         - jobs
         - models
+        - services
         - widgets
     bootstrapFiles:
         - vendor/yiisoft/yii2/Yii.php

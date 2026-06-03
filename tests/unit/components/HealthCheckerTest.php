@@ -168,4 +168,30 @@ class HealthCheckerTest extends \Codeception\Test\Unit
 
         verify($checker->isHealthy($checker->run()))->false();
     }
+
+    /**
+     * Все проверки прошли -> статус «ok».
+     */
+    public function testStatusOkWhenAllHealthy(): void
+    {
+        $checks = [
+            ['name' => 'A', 'ok' => true, 'detail' => 'ok', 'latency_ms' => 1],
+            ['name' => 'B', 'ok' => true, 'detail' => 'ok', 'latency_ms' => 2],
+        ];
+
+        verify((new HealthChecker([]))->status($checks))->equals('ok');
+    }
+
+    /**
+     * Хотя бы одна проверка упала -> статус «degraded».
+     */
+    public function testStatusDegradedWhenAnyFailed(): void
+    {
+        $checks = [
+            ['name' => 'A', 'ok' => true, 'detail' => 'ok', 'latency_ms' => 1],
+            ['name' => 'B', 'ok' => false, 'detail' => 'broker unreachable', 'latency_ms' => 9],
+        ];
+
+        verify((new HealthChecker([]))->status($checks))->equals('degraded');
+    }
 }

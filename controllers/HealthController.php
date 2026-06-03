@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace app\controllers;
 
-use app\components\HealthCheckerInterface;
-use Yii;
+use app\services\HealthServiceInterface;
 use yii\base\Module;
-use yii\web\Application;
 use yii\web\Controller;
 use yii\web\Response;
 
@@ -22,19 +20,19 @@ use yii\web\Response;
 class HealthController extends Controller
 {
     /**
-     * @var HealthCheckerInterface Компонент проверки связности инфраструктуры
+     * @var HealthServiceInterface Сервис проверки состояния инфраструктуры
      */
-    private $healthChecker;
+    private $healthService;
 
     /**
      * @param string $id Идентификатор контроллера
      * @param Module $module Модуль, которому принадлежит контроллер
-     * @param HealthCheckerInterface $healthChecker Компонент проверки (внедряется контейнером)
+     * @param HealthServiceInterface $healthService Сервис проверки (внедряется контейнером)
      * @param array<string, mixed> $config Дополнительная конфигурация
      */
-    public function __construct(string $id, Module $module, HealthCheckerInterface $healthChecker, array $config = [])
+    public function __construct(string $id, Module $module, HealthServiceInterface $healthService, array $config = [])
     {
-        $this->healthChecker = $healthChecker;
+        $this->healthService = $healthService;
         parent::__construct($id, $module, $config);
     }
 
@@ -45,27 +43,22 @@ class HealthController extends Controller
      */
     public function actionIndex()
     {
-        $checks = $this->healthChecker->run();
-        $healthy = $this->healthChecker->isHealthy($checks);
+        $report = $this->healthService->report();
 
-        $app = Yii::$app;
-        assert($app instanceof Application);
+        $this->response->statusCode = $report->isHealthy() ? 200 : 503;
 
-        $response = $app->getResponse();
-        $response->statusCode = $healthy ? 200 : 503;
-
-        if ($app->getRequest()->get('format') === 'json') {
-            $response->format = Response::FORMAT_JSON;
+        if ($this->request->get('format') === 'json') {
+            $this->response->format = Response::FORMAT_JSON;
 
             return [
-                'status' => $healthy ? 'ok' : 'degraded',
-                'checks' => $checks,
+                'status' => $report->getStatus(),
+                'checks' => $report->getChecks(),
             ];
         }
 
         return $this->render('index', [
-            'healthy' => $healthy,
-            'checks' => $checks,
+            'healthy' => $report->isHealthy(),
+            'checks' => $report->getChecks(),
         ]);
     }
 }

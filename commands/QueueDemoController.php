@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace app\commands;
 
 use app\jobs\DemoJob;
-use Yii;
-use yii\console\Application;
+use app\services\QueueServiceInterface;
+use yii\base\Module;
 use yii\console\Controller;
 use yii\console\ExitCode;
-use yii\queue\amqp_interop\Queue;
 
 /**
  * Демонстрация постановки фоновой задачи в yii2-queue.
@@ -20,6 +19,23 @@ use yii\queue\amqp_interop\Queue;
 class QueueDemoController extends Controller
 {
     /**
+     * @var QueueServiceInterface Сервис постановки фоновых задач в очередь
+     */
+    private $queueService;
+
+    /**
+     * @param string $id Идентификатор контроллера
+     * @param Module $module Модуль, которому принадлежит контроллер
+     * @param QueueServiceInterface $queueService Сервис постановки задач (внедряется контейнером)
+     * @param array<string, mixed> $config Дополнительная конфигурация
+     */
+    public function __construct(string $id, Module $module, QueueServiceInterface $queueService, array $config = [])
+    {
+        $this->queueService = $queueService;
+        parent::__construct($id, $module, $config);
+    }
+
+    /**
      * Публикует тестовое сообщение в очередь sandbox_jobs.
      *
      * @param string $message Тело сообщения
@@ -27,12 +43,7 @@ class QueueDemoController extends Controller
      */
     public function actionPush(string $message = 'hello from yii2-queue'): int
     {
-        $app = Yii::$app;
-        assert($app instanceof Application);
-
-        /** @var Queue $queue */
-        $queue = $app->get('queue');
-        $id = (string) $queue->push(new DemoJob(['message' => $message]));
+        $id = $this->queueService->push(new DemoJob(['message' => $message]));
 
         $this->stdout("Pushed job #{$id} to queue 'sandbox_jobs': {$message}\n");
 

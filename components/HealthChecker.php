@@ -63,6 +63,17 @@ class HealthChecker implements HealthCheckerInterface
     }
 
     /**
+     * Возвращает агрегированный текстовый статус по результатам проверок.
+     *
+     * @param list<array{name: string, ok: bool, detail: string, latency_ms: int}> $checks Результаты проверок
+     * @return string «ok», если все сервисы доступны, иначе «degraded»
+     */
+    public function status(array $checks): string
+    {
+        return $this->isHealthy($checks) ? 'ok' : 'degraded';
+    }
+
+    /**
      * Выполняет одну пробу и засекает время её выполнения.
      *
      * @param ProbeInterface $probe Проба сервиса

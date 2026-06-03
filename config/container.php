@@ -7,6 +7,10 @@ use app\components\health\RabbitProbe;
 use app\components\health\RedisProbe;
 use app\components\HealthChecker;
 use app\components\HealthCheckerInterface;
+use app\services\HealthService;
+use app\services\HealthServiceInterface;
+use app\services\QueueService;
+use app\services\QueueServiceInterface;
 use yii\di\Container;
 
 return [
@@ -26,6 +30,12 @@ return [
                 $container->get(RedisProbe::class),
                 $container->get(RabbitProbe::class),
             ]);
+        },
+        HealthServiceInterface::class => function (Container $container) {
+            return new HealthService($container->get(HealthCheckerInterface::class));
+        },
+        QueueServiceInterface::class => function () {
+            return new QueueService(Yii::$app->queue);
         },
     ],
 ];

@@ -26,4 +26,12 @@ interface HealthCheckerInterface
      * @return bool true, если все сервисы доступны
      */
     public function isHealthy(array $checks): bool;
+
+    /**
+     * Возвращает агрегированный текстовый статус по результатам проверок.
+     *
+     * @param list<array{name: string, ok: bool, detail: string, latency_ms: int}> $checks Результаты проверок
+     * @return string «ok», если все сервисы доступны, иначе «degraded»
+     */
+    public function status(array $checks): string;
 }
