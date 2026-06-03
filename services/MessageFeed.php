@@ -10,22 +10,17 @@ use yii\db\Connection;
  * Чтение чатов и ленты сообщений с keyset-пагинацией по времени.
  *
  * Сортировка и курсор — по паре `(created_at, id)`: `created_at` задаёт порядок,
- * `id` служит tiebreaker'ом (время не уникально). Опора — индексы
- * `(created_at, id)` для глобального списка чатов и `(chat_id, created_at)` для
- * ленты внутри чата. Лента всегда упорядочена от новых к старым.
+ * `id` служит tiebreaker'ом (время не уникально). Список чатов опирается на
+ * «loose index scan» по `(chat_id, id)`: рекурсивный CTE перебирает уникальные
+ * `chat_id`, а боковое соединение (`LATERAL`) по `(chat_id, created_at, id)`
+ * берёт последнее сообщение каждого чата — это исключает скан всей таблицы.
+ * Поиск по тексту (`ILIKE`) индексом не покрыт, поэтому идёт отдельной веткой
+ * с одним проходом по таблице и `DISTINCT ON`: массовый параллельный фильтр
+ * дешевле тысячи боковых сканов на чат. Лента внутри чата опирается на тот же
+ * `(chat_id, created_at, id)` и всегда упорядочена от новых к старым.
  */
 class MessageFeed
 {
-    /**
-     * @var string Значение `created_at`-курсора, означающее «с самого начала» (свежее любого)
-     */
-    private const TOP_TS = '9999-12-31 23:59:59';
-
-    /**
-     * @var int Значение id-курсора, означающее «с самого начала»
-     */
-    private const TOP_ID = PHP_INT_MAX;
-
     /**
      * @var Connection Соединение с базой данных
      */
@@ -40,47 +35,80 @@ class MessageFeed
     }
 
     /**
-     * Возвращает список чатов с превью последнего (по времени) сообщения.
+     * Возвращает список чатов с превью последнего сообщения.
      *
-     * Loose index scan через рекурсивный CTE по `(created_at, id)`: шагает по
-     * убыванию времени, на каждом шаге берёт последнее сообщение ещё не
-     * показанного чата — до `limit` чатов. Для пагинации курсор `(cursorTs,
-     * cursorId)` отсекает уже показанные чаты (у которых есть сообщение свежее
-     * либо равное курсору), `null`-курсор означает первую страницу.
+     * Список строится по последнему сообщению в каждом чате. Поддерживается
+     * навигация по страницам в обоих направлениях и общий поиск по содержимому
+     * сообщений внутри чатов через `LIKE`/`ILIKE`.
      *
      * @param int $limit Сколько чатов вернуть
-     * @param string|null $cursorTs created_at последнего чата предыдущей страницы
-     * @param int|null $cursorId id последнего чата предыдущей страницы
+     * @param string|null $cursorTs created_at курсора страницы
+     * @param int|null $cursorId id курсора страницы
+     * @param string $mode Режим: `first`, `older`, `newer`, `last`
+     * @param string|null $query Общий поисковый запрос по чатам
      * @return list<array<string, mixed>> Чаты (id, chat_id, user_id, body, created_at)
      */
-    public function chats(int $limit, ?string $cursorTs = null, ?int $cursorId = null): array
-    {
-        $cts = $cursorTs ?? self::TOP_TS;
-        $cid = $cursorId ?? self::TOP_ID;
+    public function chats(
+        int $limit,
+        ?string $cursorTs = null,
+        ?int $cursorId = null,
+        string $mode = 'first',
+        ?string $query = null
+    ): array {
+        $params = [':limit' => $limit];
 
-        $notShown = static function (string $alias): string {
-            return 'NOT EXISTS (SELECT 1 FROM {{%messages}} e WHERE e.chat_id = ' . $alias . '.chat_id'
-                . ' AND (e.created_at, e.id) >= (:cts, :cid))';
-        };
+        if ($query !== null && $query !== '') {
+            $params[':q'] = '%' . $this->escapeLike($query) . '%';
+            $sql = 'WITH latest AS ('
+                . 'SELECT DISTINCT ON (m.chat_id) m.id, m.chat_id, m.user_id, m.body, m.created_at'
+                . ' FROM {{%messages}} m WHERE m.body ILIKE :q'
+                . ' ORDER BY m.chat_id, m.created_at DESC, m.id DESC)';
+        } else {
+            $sql = 'WITH RECURSIVE ids AS ('
+                . '(SELECT chat_id FROM {{%messages}} ORDER BY chat_id LIMIT 1)'
+                . ' UNION ALL '
+                . 'SELECT (SELECT m.chat_id FROM {{%messages}} m WHERE m.chat_id > i.chat_id'
+                . ' ORDER BY m.chat_id LIMIT 1) FROM ids i WHERE i.chat_id IS NOT NULL'
+                . '), latest AS ('
+                . 'SELECT l.id, l.chat_id, l.user_id, l.body, l.created_at FROM ids i'
+                . ' CROSS JOIN LATERAL ('
+                . 'SELECT m.id, m.chat_id, m.user_id, m.body, m.created_at FROM {{%messages}} m'
+                . ' WHERE m.chat_id = i.chat_id'
+                . ' ORDER BY m.created_at DESC, m.id DESC LIMIT 1'
+                . ') l WHERE i.chat_id IS NOT NULL)';
+        }
 
-        $sql = 'WITH RECURSIVE t AS ('
-            . '(SELECT id, chat_id, user_id, body, created_at, ARRAY[chat_id] AS seen FROM {{%messages}} m'
-            . ' WHERE (m.created_at, m.id) < (:cts, :cid) AND ' . $notShown('m')
-            . ' ORDER BY m.created_at DESC, m.id DESC LIMIT 1)'
-            . ' UNION ALL'
-            . ' SELECT n.id, n.chat_id, n.user_id, n.body, n.created_at, t.seen || n.chat_id'
-            . ' FROM t CROSS JOIN LATERAL ('
-            . 'SELECT id, chat_id, user_id, body, created_at FROM {{%messages}} n'
-            . ' WHERE (n.created_at, n.id) < (t.created_at, t.id) AND NOT (n.chat_id = ANY(t.seen))'
-            . ' AND ' . $notShown('n')
-            . ' ORDER BY n.created_at DESC, n.id DESC LIMIT 1'
-            . ') n WHERE array_length(t.seen, 1) < :limit'
-            . ') SELECT id, chat_id, user_id, body, created_at FROM t';
+        $reverse = false;
+        switch ($mode) {
+            case 'older':
+                $sql .= ' SELECT id, chat_id, user_id, body, created_at FROM latest'
+                    . ' WHERE (created_at, id) < (:cts, :cid)'
+                    . ' ORDER BY created_at DESC, id DESC LIMIT :limit';
+                $params[':cts'] = $cursorTs;
+                $params[':cid'] = $cursorId;
+                break;
+            case 'newer':
+                $sql .= ' SELECT id, chat_id, user_id, body, created_at FROM latest'
+                    . ' WHERE (created_at, id) > (:cts, :cid)'
+                    . ' ORDER BY created_at ASC, id ASC LIMIT :limit';
+                $params[':cts'] = $cursorTs;
+                $params[':cid'] = $cursorId;
+                $reverse = true;
+                break;
+            case 'last':
+                $sql .= ' SELECT id, chat_id, user_id, body, created_at FROM latest'
+                    . ' ORDER BY created_at ASC, id ASC LIMIT :limit';
+                $reverse = true;
+                break;
+            default:
+                $sql .= ' SELECT id, chat_id, user_id, body, created_at FROM latest'
+                    . ' ORDER BY created_at DESC, id DESC LIMIT :limit';
+        }
 
         /** @var list<array<string, mixed>> $rows */
-        $rows = $this->db->createCommand($sql, [':cts' => $cts, ':cid' => $cid, ':limit' => $limit])->queryAll();
+        $rows = $this->db->createCommand($sql, $params)->queryAll();
 
-        return $rows;
+        return $reverse ? array_reverse($rows) : $rows;
     }
 
     /**

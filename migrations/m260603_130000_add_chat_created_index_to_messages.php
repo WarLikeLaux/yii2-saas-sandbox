@@ -5,9 +5,14 @@ declare(strict_types=1);
 use yii\db\Migration;
 
 /**
- * Добавляет составной индекс `(chat_id, created_at)` к таблице `messages`.
+ * Добавляет составной индекс `(chat_id, created_at DESC, id DESC)` к `messages`.
  *
- * Ускоряет выборку сообщений конкретного чата с сортировкой/фильтром по дате.
+ * Покрывает ленту конкретного чата (`WHERE chat_id = ? ORDER BY created_at DESC,
+ * id DESC`) и выбор последнего сообщения чата через боковое соединение
+ * (`LATERAL ... LIMIT 1`) при построении списка чатов. Колонка `id` в индексе —
+ * tiebreaker: при одинаковом `created_at` (точность до секунды) она задаёт
+ * порядок и убирает доупорядочивающий `Sort`, поэтому `LIMIT 1` отдаёт строку
+ * прямо из индекса.
  *
  * Индекс строится без блокировки записи (`CREATE INDEX CONCURRENTLY`), поэтому
  * миграция использует `up()`/`down()` вместо `safeUp()`/`safeDown()`: команда
@@ -23,7 +28,7 @@ class m260603_130000_add_chat_created_index_to_messages extends Migration
      */
     public function up(): void
     {
-        $this->execute('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_messages_chat_created ON {{%messages}} (chat_id, created_at)');
+        $this->execute('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_messages_chat_created ON {{%messages}} (chat_id, created_at DESC, id DESC)');
     }
 
     /**
