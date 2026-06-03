@@ -19,7 +19,8 @@
         "yiisoft/yii2-queue": "^2.3",
         "enqueue/amqp-lib": "0.10.19",
         "enqueue/amqp-tools": "0.10.19",
-        "enqueue/dsn": "0.10.19"
+        "enqueue/dsn": "0.10.19",
+        "twbs/bootstrap-icons": "1.11.3"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
