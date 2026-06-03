@@ -1,8 +1,10 @@
 <?php
 
-/** @var yii\web\View $this */
-/** @var bool $healthy */
-/** @var array[] $checks */
+/**
+ * @var yii\web\View $this
+ * @var bool $healthy
+ * @var array[] $checks
+ */
 
 use yii\bootstrap5\Html;
 use yii\helpers\Url;

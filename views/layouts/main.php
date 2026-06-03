@@ -1,7 +1,9 @@
 <?php
 
-/** @var yii\web\View $this */
-/** @var string $content */
+/**
+ * @var yii\web\View $this
+ * @var string $content
+ */
 
 use app\assets\AppAsset;
 use app\widgets\Alert;
