@@ -18,8 +18,12 @@ use yii\db\Connection;
  * (`EXPLAIN`): редкий шаблон отдаём триграммному индексу `pg_trgm` через
  * `DISTINCT ON` (точечный `Bitmap Index Scan`), а частый — тому же боковому
  * перебору чатов с фильтром в `LATERAL` (триграммы тут не отсекают, зато первое
- * же свежее сообщение чата обычно совпадает). Лента внутри чата опирается на тот
- * же `(chat_id, created_at, id)` и всегда упорядочена от новых к старым.
+ * же свежее сообщение чата обычно совпадает). В редкой ветке `DISTINCT ON`
+ * сортирует только лёгкие ключи `(id, chat_id, created_at)`, а тяжёлый `body`
+ * подтягивается `JOIN`'ом по первичному ключу — иначе сортировка десятков тысяч
+ * строк с телами переполняет `work_mem` и сбрасывается во временные файлы на
+ * диск. Лента внутри чата опирается на тот же `(chat_id, created_at, id)` и
+ * всегда упорядочена от новых к старым.
  */
 class MessageFeed
 {
@@ -80,10 +84,13 @@ class MessageFeed
         }
 
         if ($sparseSearch) {
-            $sql = 'WITH latest AS ('
-                . 'SELECT DISTINCT ON (m.chat_id) m.id, m.chat_id, m.user_id, m.body, m.created_at'
+            $sql = 'WITH keys AS ('
+                . 'SELECT DISTINCT ON (m.chat_id) m.id, m.chat_id, m.created_at'
                 . ' FROM {{%messages}} m WHERE m.body ILIKE :q'
-                . ' ORDER BY m.chat_id, m.created_at DESC, m.id DESC)';
+                . ' ORDER BY m.chat_id, m.created_at DESC, m.id DESC'
+                . '), latest AS ('
+                . 'SELECT k.id, k.chat_id, mm.user_id, mm.body, k.created_at'
+                . ' FROM keys k JOIN {{%messages}} mm ON mm.id = k.id)';
         } else {
             $sql = 'WITH RECURSIVE ids AS ('
                 . '(SELECT chat_id FROM {{%messages}} ORDER BY chat_id LIMIT 1)'
@@ -246,29 +253,37 @@ class MessageFeed
     /**
      * Оценивает число сообщений, совпадающих с шаблоном `ILIKE`, по плану запроса.
      *
-     * Берёт оценку строк верхнего узла из `EXPLAIN` (запрос не выполняется) —
-     * этого хватает, чтобы по порядку величины выбрать стратегию поиска: редкий
-     * шаблон отдаём триграммному индексу, частый — боковому перебору чатов.
+     * Берёт оценку строк верхнего узла из `EXPLAIN (FORMAT JSON)` (запрос не
+     * выполняется) — этого хватает, чтобы по порядку величины выбрать стратегию
+     * поиска: редкий шаблон отдаём триграммному индексу, частый — боковому
+     * перебору чатов. JSON-формат разбирается структурно (`Plan.Plan Rows`), без
+     * парсинга текста, поэтому устойчив к смене формата вывода между версиями СУБД.
      *
      * @param string $like Готовый шаблон для `ILIKE` (например `%текст%`)
      * @return int Оценка числа совпадающих строк (0, если оценку не удалось извлечь)
      */
     private function estimateMatches(string $like): int
     {
-        /** @var list<array<string, mixed>> $plan */
-        $plan = $this->db->createCommand(
-            'EXPLAIN SELECT 1 FROM {{%messages}} WHERE body ILIKE :q',
+        $json = $this->db->createCommand(
+            'EXPLAIN (FORMAT JSON) SELECT 1 FROM {{%messages}} WHERE body ILIKE :q',
             [':q' => $like]
-        )->queryAll();
+        )->queryScalar();
 
-        foreach ($plan as $row) {
-            $line = reset($row);
-            if (is_string($line) && preg_match('/rows=(\d+)/', $line, $matches) === 1) {
-                return (int) $matches[1];
-            }
+        if (!is_string($json)) {
+            return 0;
         }
 
-        return 0;
+        $plan = json_decode($json, true);
+        if (!is_array($plan) || !isset($plan[0]) || !is_array($plan[0])) {
+            return 0;
+        }
+
+        $node = $plan[0]['Plan'] ?? null;
+        if (!is_array($node) || !isset($node['Plan Rows']) || !is_numeric($node['Plan Rows'])) {
+            return 0;
+        }
+
+        return (int) $node['Plan Rows'];
     }
 
     /**

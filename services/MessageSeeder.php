@@ -55,6 +55,11 @@ class MessageSeeder
      * каждого (огромного) batch-INSERT в логгер/профайлер впустую съедает память
      * вплоть до её исчерпания. Прежние значения флагов восстанавливаются всегда.
      *
+     * По завершении вставки принудительно запускается `ANALYZE`: планировщик
+     * опирается на статистику таблицы, а выбор стратегии поиска в `MessageFeed`
+     * читает оценку числа строк из плана — без свежей статистики после массовой
+     * заливки оценка будет неверной, и поиск уйдёт в неоптимальную ветку.
+     *
      * @param int $total Сколько сообщений вставить
      * @param int $batchSize Размер одной пачки (число строк в одном INSERT)
      * @return void
@@ -84,6 +89,8 @@ class MessageSeeder
             if ($batch !== []) {
                 $this->insertBatch($batch);
             }
+
+            $this->db->createCommand('ANALYZE ' . $this->db->quoteTableName('{{%messages}}'))->execute();
         } finally {
             $this->db->enableLogging = $enableLogging;
             $this->db->enableProfiling = $enableProfiling;
