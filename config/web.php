@@ -45,6 +45,7 @@ $config = [
             'cache' => false,
             'rules' => [
                 'health' => 'health/index',
+                'messages' => 'message/index',
             ],
         ],
     ],

@@ -7,6 +7,7 @@ use app\components\health\RabbitProbe;
 use app\components\health\RedisProbe;
 use app\components\HealthChecker;
 use app\services\HealthService;
+use app\services\MessageFeed;
 use app\services\MessageSeeder;
 use app\services\QueueService;
 use yii\di\Container;
@@ -37,6 +38,9 @@ return [
         },
         MessageSeeder::class => function () {
             return new MessageSeeder(Yii::$app->db);
+        },
+        MessageFeed::class => function () {
+            return new MessageFeed(Yii::$app->db);
         },
     ],
 ];
