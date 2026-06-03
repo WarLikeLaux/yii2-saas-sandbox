@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace app\commands;
 
 use app\jobs\DemoJob;
-use app\services\QueueServiceInterface;
+use app\services\QueueService;
 use yii\base\Module;
 use yii\console\Controller;
 use yii\console\ExitCode;
@@ -21,17 +21,17 @@ use yii\console\ExitCode;
 class QueueDemoController extends Controller
 {
     /**
-     * @var QueueServiceInterface Сервис постановки фоновых задач в очередь
+     * @var QueueService Сервис постановки фоновых задач в очередь
      */
     private $queueService;
 
     /**
      * @param string $id Идентификатор контроллера
      * @param Module $module Модуль, которому принадлежит контроллер
-     * @param QueueServiceInterface $queueService Сервис постановки задач (внедряется контейнером)
+     * @param QueueService $queueService Сервис постановки задач (внедряется контейнером)
      * @param array<string, mixed> $config Дополнительная конфигурация
      */
-    public function __construct(string $id, Module $module, QueueServiceInterface $queueService, array $config = [])
+    public function __construct(string $id, Module $module, QueueService $queueService, array $config = [])
     {
         $this->queueService = $queueService;
         parent::__construct($id, $module, $config);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace tests\unit\services;
 
-use app\components\HealthCheckerInterface;
+use app\components\HealthChecker;
 use app\services\HealthService;
 
 /**
@@ -27,7 +27,7 @@ class HealthServiceTest extends \Codeception\Test\Unit
             ['name' => 'Redis', 'ok' => true, 'detail' => 'pong', 'latency_ms' => 2],
         ];
 
-        $checker = $this->createMock(HealthCheckerInterface::class);
+        $checker = $this->createMock(HealthChecker::class);
         $checker->expects($this->once())->method('run')->willReturn($checks);
         $checker->method('isHealthy')->with($checks)->willReturn(true);
         $checker->method('status')->with($checks)->willReturn('ok');
@@ -48,7 +48,7 @@ class HealthServiceTest extends \Codeception\Test\Unit
             ['name' => 'RabbitMQ', 'ok' => false, 'detail' => 'broker unreachable', 'latency_ms' => 9],
         ];
 
-        $checker = $this->createMock(HealthCheckerInterface::class);
+        $checker = $this->createMock(HealthChecker::class);
         $checker->method('run')->willReturn($checks);
         $checker->method('isHealthy')->with($checks)->willReturn(false);
         $checker->method('status')->with($checks)->willReturn('degraded');

@@ -15,7 +15,7 @@ use yii\queue\Queue;
  * сервисы) не зависел от глобального состояния приложения и конкретного
  * драйвера. Компонент очереди внедряется через конструктор.
  */
-class QueueService implements QueueServiceInterface
+class QueueService
 {
     /**
      * @var Queue Компонент очереди yii2-queue для постановки задач

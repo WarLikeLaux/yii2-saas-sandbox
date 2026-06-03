@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace app\commands;
 
-use app\services\HealthServiceInterface;
+use app\services\HealthService;
 use yii\base\Module;
 use yii\console\Controller;
 use yii\console\ExitCode;
@@ -20,17 +20,17 @@ use yii\console\ExitCode;
 class HealthController extends Controller
 {
     /**
-     * @var HealthServiceInterface Сервис проверки состояния инфраструктуры
+     * @var HealthService Сервис проверки состояния инфраструктуры
      */
     private $healthService;
 
     /**
      * @param string $id Идентификатор контроллера
      * @param Module $module Модуль, которому принадлежит контроллер
-     * @param HealthServiceInterface $healthService Сервис проверки (внедряется контейнером)
+     * @param HealthService $healthService Сервис проверки (внедряется контейнером)
      * @param array<string, mixed> $config Дополнительная конфигурация
      */
-    public function __construct(string $id, Module $module, HealthServiceInterface $healthService, array $config = [])
+    public function __construct(string $id, Module $module, HealthService $healthService, array $config = [])
     {
         $this->healthService = $healthService;
         parent::__construct($id, $module, $config);

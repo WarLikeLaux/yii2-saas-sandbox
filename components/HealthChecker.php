@@ -14,7 +14,7 @@ use app\components\health\ProbeInterface;
  * ProbeInterface, поэтому добавление нового сервиса не требует правок этого
  * класса — достаточно зарегистрировать новую пробу в DI-контейнере.
  */
-class HealthChecker implements HealthCheckerInterface
+class HealthChecker
 {
     /**
      * @var ProbeInterface[] Список проб инфраструктурных сервисов

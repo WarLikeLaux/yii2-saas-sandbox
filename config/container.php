@@ -6,11 +6,8 @@ use app\components\health\PostgresProbe;
 use app\components\health\RabbitProbe;
 use app\components\health\RedisProbe;
 use app\components\HealthChecker;
-use app\components\HealthCheckerInterface;
 use app\services\HealthService;
-use app\services\HealthServiceInterface;
 use app\services\QueueService;
-use app\services\QueueServiceInterface;
 use yii\di\Container;
 
 return [
@@ -24,17 +21,17 @@ return [
         RabbitProbe::class => function () {
             return new RabbitProbe(Yii::$app->queue);
         },
-        HealthCheckerInterface::class => function (Container $container) {
+        HealthChecker::class => function (Container $container) {
             return new HealthChecker([
                 $container->get(PostgresProbe::class),
                 $container->get(RedisProbe::class),
                 $container->get(RabbitProbe::class),
             ]);
         },
-        HealthServiceInterface::class => function (Container $container) {
-            return new HealthService($container->get(HealthCheckerInterface::class));
+        HealthService::class => function (Container $container) {
+            return new HealthService($container->get(HealthChecker::class));
         },
-        QueueServiceInterface::class => function () {
+        QueueService::class => function () {
             return new QueueService(Yii::$app->queue);
         },
     ],

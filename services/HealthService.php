@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace app\services;
 
-use app\components\HealthCheckerInterface;
+use app\components\HealthChecker;
 
 /**
  * Сервис проверки состояния инфраструктуры.
  *
  * Оркестрирует компонент проверки: один раз прогоняет пробы и на их основе
- * собирает отчёт ({@see HealthReport}). Сам компонент {@see HealthCheckerInterface}
+ * собирает отчёт ({@see HealthReport}). Сам компонент {@see HealthChecker}
  * скрыт за этим сервисом, поэтому контроллеры и команды зависят только от
  * единой операции получения отчёта.
  */
-class HealthService implements HealthServiceInterface
+class HealthService
 {
     /**
-     * @var HealthCheckerInterface Компонент прогона проб и агрегации результатов
+     * @var HealthChecker Компонент прогона проб и агрегации результатов
      */
     private $healthChecker;
 
     /**
-     * @param HealthCheckerInterface $healthChecker Компонент проверки (внедряется контейнером)
+     * @param HealthChecker $healthChecker Компонент проверки (внедряется контейнером)
      */
-    public function __construct(HealthCheckerInterface $healthChecker)
+    public function __construct(HealthChecker $healthChecker)
     {
         $this->healthChecker = $healthChecker;
     }
