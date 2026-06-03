@@ -4,65 +4,44 @@ declare(strict_types=1);
 
 namespace app\controllers;
 
-use app\services\MessageFeed;
+use app\services\MessagePageService;
 use yii\base\Module;
 use yii\web\Controller;
 
 /**
- * Лента сообщений чата с keyset-пагинацией.
+ * Контроллер страницы чатов и сообщений.
  *
- * GET /messages?chat_id=427           — первая страница (новые сверху)
- * GET /messages?chat_id=427&after=ID  — следующая страница (курсор — id последней строки)
+ * Вся прикладная логика сборки страницы вынесена в `MessagePageService`.
+ * Контроллер только вызывает сервис и передаёт результат во view.
  */
 class MessageController extends Controller
 {
     /**
-     * @var int Размер страницы
+     * @var MessagePageService Сервис сборки модели страницы сообщений
      */
-    private const PAGE_SIZE = 20;
-
-    /**
-     * @var MessageFeed Сервис чтения ленты сообщений
-     */
-    private $feed;
+    private $pageService;
 
     /**
      * @param string $id Идентификатор контроллера
      * @param Module $module Модуль, которому принадлежит контроллер
-     * @param MessageFeed $feed Сервис чтения ленты (внедряется контейнером)
+     * @param MessagePageService $pageService Сервис сборки модели страницы
      * @param array<string, mixed> $config Дополнительная конфигурация
      */
-    public function __construct(string $id, Module $module, MessageFeed $feed, array $config = [])
+    public function __construct(string $id, Module $module, MessagePageService $pageService, array $config = [])
     {
-        $this->feed = $feed;
+        $this->pageService = $pageService;
         parent::__construct($id, $module, $config);
     }
 
     /**
-     * Отдаёт страницу сообщений чата и курсор на следующую.
+     * Отдаёт страницу чата: список чатов, ленту/результаты поиска и навигацию.
      *
      * @return string HTML-разметка страницы
      */
     public function actionIndex(): string
     {
-        $chatIdRaw = $this->request->get('chat_id', '1');
-        $chatId = is_numeric($chatIdRaw) ? (int) $chatIdRaw : 1;
-
-        $afterRaw = $this->request->get('after');
-        $afterId = is_numeric($afterRaw) ? (int) $afterRaw : null;
-
-        $messages = $this->feed->page($chatId, $afterId, self::PAGE_SIZE);
-
-        $nextCursor = null;
-        if (count($messages) === self::PAGE_SIZE) {
-            $lastId = $messages[count($messages) - 1]['id'];
-            $nextCursor = is_numeric($lastId) ? (int) $lastId : null;
-        }
-
         return $this->render('index', [
-            'chatId' => $chatId,
-            'messages' => $messages,
-            'nextCursor' => $nextCursor,
+            'page' => $this->pageService->build(),
         ]);
     }
 }

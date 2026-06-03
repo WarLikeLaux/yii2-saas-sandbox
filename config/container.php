@@ -6,8 +6,10 @@ use app\components\health\PostgresProbe;
 use app\components\health\RabbitProbe;
 use app\components\health\RedisProbe;
 use app\components\HealthChecker;
+use app\helpers\RequestParamHelper;
 use app\services\HealthService;
 use app\services\MessageFeed;
+use app\services\MessagePageService;
 use app\services\MessageSeeder;
 use app\services\QueueService;
 use yii\di\Container;
@@ -41,6 +43,15 @@ return [
         },
         MessageFeed::class => function () {
             return new MessageFeed(Yii::$app->db);
+        },
+        MessagePageService::class => function (Container $container) {
+            return new MessagePageService(
+                $container->get(MessageFeed::class),
+                $container->get(RequestParamHelper::class)
+            );
+        },
+        RequestParamHelper::class => function () {
+            return new RequestParamHelper(Yii::$app->request);
         },
     ],
 ];
