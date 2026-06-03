@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace app\services;
 
+use Faker\Factory;
 use yii\db\Connection;
 
 /**
@@ -12,13 +13,26 @@ use yii\db\Connection;
  * Применяется для нагрузочных экспериментов: генерирует сообщения и вставляет
  * их пакетами (batch insert). Каждая пачка вставляется в отдельной транзакции —
  * короткие транзакции дружелюбны к PgBouncer (transaction mode) и не раздувают WAL.
+ * Тексты сообщений берутся из заранее собранного Faker-пула связного русского
+ * текста: генерация на лету для миллионов строк дорога, а пул даёт осмысленное
+ * содержимое (по нему работает и поиск) без потери скорости вставки.
  */
 class MessageSeeder
 {
     /**
+     * @var int Размер пула заранее сгенерированных текстов сообщений
+     */
+    private const BODY_POOL_SIZE = 2000;
+
+    /**
      * @var Connection Соединение с базой данных
      */
     private $db;
+
+    /**
+     * @var list<string> Пул текстов сообщений, из которого берутся случайные body
+     */
+    private $bodyPool = [];
 
     /**
      * @var list<string> Имена колонок таблицы `messages`, заполняемых при вставке
@@ -48,6 +62,8 @@ class MessageSeeder
      */
     public function seed(int $total, int $batchSize): void
     {
+        $this->bootstrapBodyPool();
+
         $enableLogging = $this->db->enableLogging;
         $enableProfiling = $this->db->enableProfiling;
         $this->db->enableLogging = false;
@@ -108,6 +124,27 @@ class MessageSeeder
     }
 
     /**
+     * Заполняет пул текстов сообщений связным русским текстом через Faker.
+     *
+     * Вызывается один раз перед вставкой: `realText()` дорог, поэтому генерируем
+     * фиксированный набор фраз заранее, а `makeRow()` берёт из него случайную —
+     * скорость batch insert сохраняется, а содержимое остаётся осмысленным.
+     *
+     * @return void
+     */
+    private function bootstrapBodyPool(): void
+    {
+        $faker = Factory::create('ru_RU');
+
+        $pool = [];
+        for ($i = 0; $i < self::BODY_POOL_SIZE; $i++) {
+            $pool[] = $faker->realText(mt_rand(20, 120));
+        }
+
+        $this->bodyPool = $pool;
+    }
+
+    /**
      * Создаёт одну случайную строку сообщения.
      *
      * @return array{0: int, 1: int, 2: string, 3: int, 4: string} Значения колонок в порядке self::$columns
@@ -117,7 +154,7 @@ class MessageSeeder
         return [
             mt_rand(1, 1000),
             mt_rand(1, 500),
-            'Сообщение №' . mt_rand(1, 1000000),
+            $this->bodyPool[mt_rand(0, count($this->bodyPool) - 1)],
             mt_rand(0, 2),
             date('Y-m-d H:i:s', time() - mt_rand(0, 31536000)),
         ];

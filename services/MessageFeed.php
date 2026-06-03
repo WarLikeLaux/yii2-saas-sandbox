@@ -29,7 +29,7 @@ class MessageFeed
      *          строки, и боковой перебор чатов дешевле, чем `DISTINCT ON` по
      *          миллионам совпадений.
      */
-    private const SEARCH_DENSE_THRESHOLD = 10000;
+    private const SEARCH_DENSE_THRESHOLD = 25000;
 
     /**
      * @var Connection Соединение с базой данных
