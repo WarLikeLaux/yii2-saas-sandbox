@@ -5,7 +5,7 @@ export UID := $(shell id -u)
 export GID := $(shell id -g)
 
 .DEFAULT_GOAL := help
-.PHONY: help up down build install shell health logs dev cs cs-check rector rector-check analyze test audit docs ci
+.PHONY: help up down build install shell health migrate env logs dev cs cs-check rector rector-check analyze test audit docs ci
 
 DOCTUM_PHAR ?= tools/doctum.phar
 DOCTUM_VERSION ?= 5.5
@@ -33,6 +33,12 @@ logs: ## хвост логов всех сервисов
 
 health: ## проверить связность сервисов (./yii health)
 	$(PHP) ./yii health
+
+migrate: ## применить миграции напрямую к postgres (минуя PgBouncer)
+	$(DC) exec -T -e DB_HOST=postgres -e DB_PORT=5432 php ./yii migrate --interactive=0
+
+env: ## пересобрать .env из .env.example (интерактивно, с сохранением текущих значений)
+	@bash bin/gen-env.sh
 
 cs: ## исправить стиль кода (php-cs-fixer)
 	$(PHP) vendor/bin/php-cs-fixer fix

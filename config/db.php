@@ -12,4 +12,7 @@ return [
     'username' => getenv('DB_USER') ?: 'yii2',
     'password' => getenv('DB_PASSWORD') ?: 'secret',
     'charset' => 'utf8',
+    'attributes' => [
+        PDO::ATTR_EMULATE_PREPARES => true,
+    ],
 ];

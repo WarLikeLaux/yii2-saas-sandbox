@@ -22,22 +22,13 @@ services:
     volumes:
       - ./:/app:delegated
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zz-custom.ini:ro
-    environment:
-      DB_HOST: postgres
-      DB_PORT: '5432'
-      DB_NAME: yii2basic
-      DB_USER: yii2
-      DB_PASSWORD: secret
-      REDIS_HOST: redis
-      REDIS_PORT: '6379'
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: '5672'
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
-      RABBITMQ_VHOST: /
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
+      pgbouncer:
+        condition: service_started
       redis:
         condition: service_started
       rabbitmq:
@@ -46,21 +37,39 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: saas-postgres
-    # Жёсткий лимит соединений для демонстрации исчерпания без пула (PgBouncer)
     command: ['postgres', '-c', 'max_connections=5']
     environment:
-      POSTGRES_DB: yii2basic
-      POSTGRES_USER: yii2
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${DB_NAME:-yii2basic}
+      POSTGRES_USER: ${DB_USER:-yii2}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
     ports:
       - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U yii2 -d yii2basic']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-yii2} -d ${DB_NAME:-yii2basic}']
       interval: 5s
       timeout: 5s
       retries: 10
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: saas-pgbouncer
+    environment:
+      DB_HOST: postgres
+      DB_PORT: '5432'
+      DB_USER: ${DB_USER:-yii2}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      DB_NAME: ${DB_NAME:-yii2basic}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: '100'
+      DEFAULT_POOL_SIZE: '3'
+      AUTH_TYPE: scram-sha-256
+    ports:
+      - '6432:5432'
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   redis:
     image: redis:7-alpine
@@ -74,8 +83,8 @@ services:
     image: rabbitmq:3-management
     container_name: saas-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
       - '5672:5672'
       - '15672:15672'
