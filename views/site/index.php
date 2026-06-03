@@ -37,9 +37,40 @@ $services = [
     ],
 ];
 
+$tools = [
+    [
+        'icon' => 'bi-heart-pulse',
+        'title' => 'Состояние сервисов',
+        'text' => 'Проверка связности PostgreSQL, Redis и RabbitMQ (HTML или JSON).',
+        'url' => Url::to(['/health']),
+        'external' => false,
+    ],
+    [
+        'icon' => 'bi-chat-dots',
+        'title' => 'Лента сообщений',
+        'text' => 'Демонстрация keyset-пагинации по индексу (chat_id, id).',
+        'url' => Url::to(['/message/index', 'chat_id' => 1]),
+        'external' => false,
+    ],
+    [
+        'icon' => 'bi-arrow-left-right',
+        'title' => 'RabbitMQ Management',
+        'text' => 'Веб-панель брокера очередей. Логин и пароль: guest / guest.',
+        'url' => 'http://localhost:15672',
+        'external' => true,
+    ],
+    [
+        'icon' => 'bi-database-gear',
+        'title' => 'Adminer (PostgreSQL)',
+        'text' => 'Веб-админка БД. Сервер: postgres, пользователь: yii2, БД: yii2basic.',
+        'url' => 'http://localhost:8080',
+        'external' => true,
+    ],
+];
+
 $quality = [
     'declare(strict_types=1) обязателен во всех файлах проекта.',
-    'PHPStan level 6 + phpstan-strict-rules для строгой статической проверки.',
+    'PHPStan level 9 + phpstan-strict-rules для строгой статической проверки.',
     'PHP-CS-Fixer — единый стиль по PSR-12.',
     'Rector — автоматический рефакторинг с таргетом PHP 7.4.',
     'composer audit — контроль уязвимостей в зависимостях.',
@@ -67,6 +98,32 @@ $quality = [
             ['/health'],
             ['class' => 'btn btn-primary btn-lg px-4 shadow-sm', 'encode' => false]
         ) ?>
+    </section>
+
+    <section class="py-4">
+        <h2 class="h4 fw-semibold mb-4 text-center">Инструменты и панели</h2>
+        <div class="row g-4">
+            <?php foreach ($tools as $tool): ?>
+                <div class="col-md-6 col-lg-3">
+                    <?= Html::a(
+                        '<div class="card h-100 border-0 shadow-sm rounded-3">'
+                        . '<div class="card-body p-4">'
+                        . '<div class="fs-1 mb-2 text-primary"><i class="bi ' . Html::encode($tool['icon']) . '"></i></div>'
+                        . '<h3 class="h6 fw-semibold">' . Html::encode($tool['title'])
+                        . ($tool['external'] ? ' <i class="bi bi-box-arrow-up-right small text-muted"></i>' : '')
+                        . '</h3>'
+                        . '<p class="card-text small text-secondary mb-0">' . Html::encode($tool['text']) . '</p>'
+                        . '</div></div>',
+                        $tool['url'],
+                        array_merge(
+                            ['class' => 'text-decoration-none text-reset'],
+                            $tool['external'] ? ['target' => '_blank', 'rel' => 'noopener'] : [],
+                            ['encode' => false]
+                        )
+                    ) ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
     </section>
 
     <section class="py-4">

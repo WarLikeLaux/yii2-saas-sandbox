@@ -71,6 +71,17 @@ services:
       postgres:
         condition: service_healthy
 
+  adminer:
+    image: adminer:latest
+    container_name: saas-adminer
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   redis:
     image: redis:7-alpine
     container_name: saas-redis
