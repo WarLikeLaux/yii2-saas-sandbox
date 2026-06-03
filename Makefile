@@ -5,7 +5,10 @@ export UID := $(shell id -u)
 export GID := $(shell id -g)
 
 .DEFAULT_GOAL := help
-.PHONY: help up down build install shell health logs dev cs cs-check rector rector-check analyze test audit ci
+.PHONY: help up down build install shell health logs dev cs cs-check rector rector-check analyze test audit docs ci
+
+DOCTUM_PHAR ?= tools/doctum.phar
+DOCTUM_VERSION ?= 5.5
 
 help: ## список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -53,5 +56,13 @@ test: ## строго юнит-тесты (codeception unit)
 
 audit: ## аудит зависимостей на уязвимости
 	$(PHP) composer audit --abandoned=report
+
+docs-install: ## скачать Doctum PHAR (ветка 5.5 — последняя с поддержкой PHP 7.4)
+	mkdir -p tools
+	curl -L https://doctum.long-term.support/releases/$(DOCTUM_VERSION)/doctum.phar -o $(DOCTUM_PHAR)
+
+docs: ## сгенерировать API-документацию через Doctum (в контейнере, PHP 7.4)
+	@test -f $(DOCTUM_PHAR) || $(MAKE) docs-install
+	$(PHP) php $(DOCTUM_PHAR) update docs/doctum.php --ignore-parse-errors
 
 ci: cs-check analyze rector-check test audit ## полный гейт (как в CI): стиль + анализ + рефакторинг + тесты + аудит

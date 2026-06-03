@@ -16,3 +16,6 @@ phpunit.phar
 tests/_output/*
 tests/_support/_generated
 /.vagrant
+/docs/api/
+/docs/.doctum-cache/
+/tools/doctum.phar
