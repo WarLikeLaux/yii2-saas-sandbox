@@ -12,8 +12,10 @@ use yii\console\ExitCode;
 /**
  * Проверка связности инфраструктуры песочницы: PostgreSQL, Redis, RabbitMQ.
  *
+ * ```
  * Запуск: ./yii health
  * Web-аналог: GET /health (HTML) и GET /health?format=json
+ * ```
  */
 class HealthController extends Controller
 {

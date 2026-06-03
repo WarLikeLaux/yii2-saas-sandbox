@@ -11,8 +11,10 @@ use yii\queue\JobInterface;
 /**
  * Демонстрационная фоновая задача для yii2-queue (драйвер amqp_interop).
  *
+ * ```
  * Публикация:  ./yii queue-demo/push "текст"
  * Обработка:   ./yii queue/listen (демон)
+ * ```
  */
 class DemoJob extends BaseObject implements JobInterface
 {

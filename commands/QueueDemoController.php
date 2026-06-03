@@ -13,8 +13,10 @@ use yii\console\ExitCode;
 /**
  * Демонстрация постановки фоновой задачи в yii2-queue.
  *
+ * ```
  * Поставить:  ./yii queue-demo/push "текст"
  * Обработать: ./yii queue/listen (демон)
+ * ```
  */
 class QueueDemoController extends Controller
 {
