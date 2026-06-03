@@ -1,16 +1,13 @@
 {
-    "name": "yiisoft/yii2-app-basic",
-    "description": "Yii 2 Basic Project Template",
-    "keywords": ["yii2", "framework", "basic", "project template"],
-    "homepage": "https://www.yiiframework.com/",
+    "name": "warlikelaux/yii2-saas-sandbox",
+    "description": "Песочница для прототипов SaaS-бэкенда: PHP 7.4 + Yii2 в Docker с PostgreSQL, Redis и RabbitMQ",
+    "keywords": ["yii2", "saas", "sandbox", "docker", "postgresql", "redis", "rabbitmq"],
+    "homepage": "https://github.com/WarLikeLaux/yii2-saas-sandbox",
     "type": "project",
     "license": "BSD-3-Clause",
     "support": {
-        "issues": "https://github.com/yiisoft/yii2/issues?state=open",
-        "forum": "https://www.yiiframework.com/forum/",
-        "wiki": "https://www.yiiframework.com/wiki/",
-        "irc": "ircs://irc.libera.chat:6697/yii",
-        "source": "https://github.com/yiisoft/yii2"
+        "issues": "https://github.com/WarLikeLaux/yii2-saas-sandbox/issues",
+        "source": "https://github.com/WarLikeLaux/yii2-saas-sandbox"
     },
     "minimum-stability": "stable",
     "require": {

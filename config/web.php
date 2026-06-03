@@ -19,7 +19,7 @@ $config = [
     ],
     'components' => [
         'request' => [
-            'cookieValidationKey' => 'jDrmPQni0naWc1ZrSehB3CPHqXz0mO3_',
+            'cookieValidationKey' => getenv('COOKIE_VALIDATION_KEY') ?: 'jDrmPQni0naWc1ZrSehB3CPHqXz0mO3_',
         ],
         'redis' => $redis,
         'queue' => $queue,
