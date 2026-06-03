@@ -115,8 +115,8 @@ class MessageSeeder
     private function makeRow(): array
     {
         return [
-            mt_rand(1, 100000),
-            mt_rand(1, 50000),
+            mt_rand(1, 1000),
+            mt_rand(1, 500),
             'Сообщение №' . mt_rand(1, 1000000),
             mt_rand(0, 2),
             date('Y-m-d H:i:s', time() - mt_rand(0, 31536000)),
