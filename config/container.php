@@ -6,6 +6,7 @@ use app\components\health\PostgresProbe;
 use app\components\health\RabbitProbe;
 use app\components\health\RedisProbe;
 use app\components\HealthChecker;
+use app\helpers\DbHelper;
 use app\helpers\RequestParamHelper;
 use app\services\HealthService;
 use app\services\MessageFeed;
@@ -41,8 +42,8 @@ return [
         MessageSeeder::class => function () {
             return new MessageSeeder(Yii::$app->db);
         },
-        MessageFeed::class => function () {
-            return new MessageFeed(Yii::$app->db);
+        MessageFeed::class => function (Container $container) {
+            return new MessageFeed(Yii::$app->db, $container->get(DbHelper::class));
         },
         MessagePageService::class => function (Container $container) {
             return new MessagePageService(

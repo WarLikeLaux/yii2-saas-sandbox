@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace app\services;
 
+use app\helpers\DbHelper;
 use yii\db\Connection;
 
 /**
@@ -41,11 +42,18 @@ class MessageFeed
     private $db;
 
     /**
-     * @param Connection $db Соединение с базой данных (внедряется контейнером)
+     * @var DbHelper Помощник для низкоуровневых операций с SQL и базой данных
      */
-    public function __construct(Connection $db)
+    private $dbHelper;
+
+    /**
+     * @param Connection $db Соединение с базой данных (внедряется контейнером)
+     * @param DbHelper $dbHelper Помощник для низкоуровневых операций с SQL и базой данных
+     */
+    public function __construct(Connection $db, DbHelper $dbHelper)
     {
         $this->db = $db;
+        $this->dbHelper = $dbHelper;
     }
 
     /**
@@ -74,7 +82,7 @@ class MessageFeed
         $lateralFilter = '';
         $sparseSearch = false;
         if ($query !== null && $query !== '') {
-            $like = '%' . $this->escapeLike($query) . '%';
+            $like = '%' . $this->dbHelper->escapeLike($query) . '%';
             $params[':q'] = $like;
             if ($this->estimateMatches($like) > self::SEARCH_DENSE_THRESHOLD) {
                 $lateralFilter = ' AND m.body ILIKE :q';
@@ -155,7 +163,7 @@ class MessageFeed
         /** @var list<array<string, mixed>> $rows */
         $rows = $this->db->createCommand($sql, [
             ':chatId' => $chatId,
-            ':q' => '%' . $this->escapeLike($query) . '%',
+            ':q' => '%' . $this->dbHelper->escapeLike($query) . '%',
             ':limit' => $limit,
         ])->queryAll();
 
@@ -284,16 +292,5 @@ class MessageFeed
         }
 
         return (int) $node['Plan Rows'];
-    }
-
-    /**
-     * Экранирует спецсимволы LIKE (`%`, `_`, `\`) в пользовательском вводе.
-     *
-     * @param string $value Исходная подстрока
-     * @return string Подстрока, безопасная для подстановки в шаблон LIKE
-     */
-    private function escapeLike(string $value): string
-    {
-        return strtr($value, ['\\' => '\\\\', '%' => '\\%', '_' => '\\_']);
     }
 }
