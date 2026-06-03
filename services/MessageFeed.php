@@ -14,13 +14,23 @@ use yii\db\Connection;
  * «loose index scan» по `(chat_id, id)`: рекурсивный CTE перебирает уникальные
  * `chat_id`, а боковое соединение (`LATERAL`) по `(chat_id, created_at, id)`
  * берёт последнее сообщение каждого чата — это исключает скан всей таблицы.
- * Поиск по тексту (`ILIKE`) индексом не покрыт, поэтому идёт отдельной веткой
- * с одним проходом по таблице и `DISTINCT ON`: массовый параллельный фильтр
- * дешевле тысячи боковых сканов на чат. Лента внутри чата опирается на тот же
- * `(chat_id, created_at, id)` и всегда упорядочена от новых к старым.
+ * Поиск по тексту (`ILIKE`) выбирает стратегию по оценке селективности шаблона
+ * (`EXPLAIN`): редкий шаблон отдаём триграммному индексу `pg_trgm` через
+ * `DISTINCT ON` (точечный `Bitmap Index Scan`), а частый — тому же боковому
+ * перебору чатов с фильтром в `LATERAL` (триграммы тут не отсекают, зато первое
+ * же свежее сообщение чата обычно совпадает). Лента внутри чата опирается на тот
+ * же `(chat_id, created_at, id)` и всегда упорядочена от новых к старым.
  */
 class MessageFeed
 {
+    /**
+     * @var int Порог оценки числа совпадений, выше которого поиск по тексту
+     *          считается «частым»: триграммный индекс уже почти не отсекает
+     *          строки, и боковой перебор чатов дешевле, чем `DISTINCT ON` по
+     *          миллионам совпадений.
+     */
+    private const SEARCH_DENSE_THRESHOLD = 10000;
+
     /**
      * @var Connection Соединение с базой данных
      */
@@ -57,8 +67,19 @@ class MessageFeed
     ): array {
         $params = [':limit' => $limit];
 
+        $lateralFilter = '';
+        $sparseSearch = false;
         if ($query !== null && $query !== '') {
-            $params[':q'] = '%' . $this->escapeLike($query) . '%';
+            $like = '%' . $this->escapeLike($query) . '%';
+            $params[':q'] = $like;
+            if ($this->estimateMatches($like) > self::SEARCH_DENSE_THRESHOLD) {
+                $lateralFilter = ' AND m.body ILIKE :q';
+            } else {
+                $sparseSearch = true;
+            }
+        }
+
+        if ($sparseSearch) {
             $sql = 'WITH latest AS ('
                 . 'SELECT DISTINCT ON (m.chat_id) m.id, m.chat_id, m.user_id, m.body, m.created_at'
                 . ' FROM {{%messages}} m WHERE m.body ILIKE :q'
@@ -73,7 +94,7 @@ class MessageFeed
                 . 'SELECT l.id, l.chat_id, l.user_id, l.body, l.created_at FROM ids i'
                 . ' CROSS JOIN LATERAL ('
                 . 'SELECT m.id, m.chat_id, m.user_id, m.body, m.created_at FROM {{%messages}} m'
-                . ' WHERE m.chat_id = i.chat_id'
+                . ' WHERE m.chat_id = i.chat_id' . $lateralFilter
                 . ' ORDER BY m.created_at DESC, m.id DESC LIMIT 1'
                 . ') l WHERE i.chat_id IS NOT NULL)';
         }
@@ -220,6 +241,34 @@ class MessageFeed
         )->queryScalar();
 
         return is_numeric($scalar) && (int) $scalar === 1;
+    }
+
+    /**
+     * Оценивает число сообщений, совпадающих с шаблоном `ILIKE`, по плану запроса.
+     *
+     * Берёт оценку строк верхнего узла из `EXPLAIN` (запрос не выполняется) —
+     * этого хватает, чтобы по порядку величины выбрать стратегию поиска: редкий
+     * шаблон отдаём триграммному индексу, частый — боковому перебору чатов.
+     *
+     * @param string $like Готовый шаблон для `ILIKE` (например `%текст%`)
+     * @return int Оценка числа совпадающих строк (0, если оценку не удалось извлечь)
+     */
+    private function estimateMatches(string $like): int
+    {
+        /** @var list<array<string, mixed>> $plan */
+        $plan = $this->db->createCommand(
+            'EXPLAIN SELECT 1 FROM {{%messages}} WHERE body ILIKE :q',
+            [':q' => $like]
+        )->queryAll();
+
+        foreach ($plan as $row) {
+            $line = reset($row);
+            if (is_string($line) && preg_match('/rows=(\d+)/', $line, $matches) === 1) {
+                return (int) $matches[1];
+            }
+        }
+
+        return 0;
     }
 
     /**
