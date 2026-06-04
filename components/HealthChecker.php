@@ -17,12 +17,12 @@ use app\components\health\ProbeInterface;
 class HealthChecker
 {
     /**
-     * @var ProbeInterface[] Список проб инфраструктурных сервисов
+     * @var list<ProbeInterface> Список проб инфраструктурных сервисов
      */
     private $probes;
 
     /**
-     * @param ProbeInterface[] $probes Пробы сервисов, которые нужно проверить
+     * @param list<ProbeInterface> $probes Пробы сервисов, которые нужно проверить
      */
     public function __construct(array $probes)
     {
