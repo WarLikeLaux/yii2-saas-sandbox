@@ -27,6 +27,11 @@ class SeedController extends Controller
     public $truncate = false;
 
     /**
+     * @var bool Грузить через `COPY` вместо batch `INSERT` (опция `--copy`)
+     */
+    public $copy = false;
+
+    /**
      * @var MessageSeeder Сервис массовой вставки сообщений
      */
     private $seeder;
@@ -51,7 +56,7 @@ class SeedController extends Controller
      */
     public function options($actionID): array
     {
-        return ['truncate'];
+        return ['truncate', 'copy'];
     }
 
     /**
@@ -84,7 +89,7 @@ class SeedController extends Controller
         $this->stdout("Вставка {$total} сообщений пачками по {$batchSize}...\n");
 
         $start = microtime(true);
-        $this->seeder->seed($total, $batchSize);
+        $this->seeder->seed($total, $batchSize, $this->copy);
         $elapsed = microtime(true) - $start;
 
         $rate = $elapsed > 0 ? (int) round($total / $elapsed) : 0;

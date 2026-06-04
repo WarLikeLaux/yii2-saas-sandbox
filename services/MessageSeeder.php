@@ -67,10 +67,11 @@ class MessageSeeder
      *
      * @param int $total Сколько сообщений вставить
      * @param int $batchSize Размер одной пачки (число строк в одном INSERT)
+     * @param bool $useCopy Грузить пачки через `COPY` вместо batch `INSERT` (быстрее)
      * @return void
      * @throws \Throwable Если вставка пачки завершилась ошибкой
      */
-    public function seed(int $total, int $batchSize): void
+    public function seed(int $total, int $batchSize, bool $useCopy = false): void
     {
         $this->bootstrapBodyPool();
 
@@ -86,13 +87,13 @@ class MessageSeeder
                 $batch[] = $this->makeRow();
 
                 if (count($batch) >= $batchSize) {
-                    $this->insertBatch($batch);
+                    $useCopy ? $this->insertBatchCopy($batch) : $this->insertBatch($batch);
                     $batch = [];
                 }
             }
 
             if ($batch !== []) {
-                $this->insertBatch($batch);
+                $useCopy ? $this->insertBatchCopy($batch) : $this->insertBatch($batch);
             }
 
             $this->db->createCommand('ANALYZE ' . $this->db->quoteTableName('{{%messages}}'))->execute();
@@ -139,6 +140,60 @@ class MessageSeeder
 
             throw $e;
         }
+    }
+
+    /**
+     * Вставляет одну пачку строк через `COPY` в единой транзакции.
+     *
+     * `COPY` грузит данные потоком, минуя разбор отдельных `INSERT`, и на массовой
+     * заливке заметно быстрее batch `INSERT`. Значения подаются в текстовом
+     * формате `COPY` (поля через табуляцию), поэтому спецсимволы тела сообщения
+     * предварительно экранируются.
+     *
+     * @param list<array{0: int, 1: int, 2: string, 3: int, 4: string}> $rows Строки для вставки
+     * @return void
+     * @throws \Throwable Если вставка завершилась ошибкой
+     */
+    private function insertBatchCopy(array $rows): void
+    {
+        $table = $this->db->getSchema()->getRawTableName('{{%messages}}');
+
+        $lines = [];
+        foreach ($rows as $row) {
+            $lines[] = implode("\t", [
+                (string) $row[0],
+                (string) $row[1],
+                $this->escapeCopy($row[2]),
+                (string) $row[3],
+                $row[4],
+            ]);
+        }
+
+        $transaction = $this->db->beginTransaction();
+
+        try {
+            $pdo = $this->db->getMasterPdo();
+            $ok = $pdo->pgsqlCopyFromArray($table, $lines, "\t", '\\N', implode(', ', $this->columns));
+            if ($ok === false) {
+                throw new \RuntimeException('COPY завершился ошибкой');
+            }
+            $transaction->commit();
+        } catch (\Throwable $e) {
+            $transaction->rollBack();
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Экранирует спецсимволы текстового формата `COPY` (`\`, табуляция, переводы строк).
+     *
+     * @param string $value Исходное значение поля
+     * @return string Значение, безопасное для подстановки в строку `COPY`
+     */
+    private function escapeCopy(string $value): string
+    {
+        return strtr($value, ['\\' => '\\\\', "\t" => '\\t', "\n" => '\\n', "\r" => '\\r']);
     }
 
     /**
