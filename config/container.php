@@ -12,6 +12,7 @@ use app\services\HealthService;
 use app\services\MessageFeed;
 use app\services\MessagePageService;
 use app\services\MessageSeeder;
+use app\services\MessageStatusService;
 use app\services\QueueService;
 use yii\di\Container;
 
@@ -41,6 +42,9 @@ return [
         },
         MessageSeeder::class => function () {
             return new MessageSeeder(Yii::$app->db);
+        },
+        MessageStatusService::class => function () {
+            return new MessageStatusService(Yii::$app->db);
         },
         MessageFeed::class => function (Container $container) {
             return new MessageFeed(Yii::$app->db, $container->get(DbHelper::class));
