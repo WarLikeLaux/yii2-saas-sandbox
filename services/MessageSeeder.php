@@ -55,10 +55,15 @@ class MessageSeeder
      * каждого (огромного) batch-INSERT в логгер/профайлер впустую съедает память
      * вплоть до её исчерпания. Прежние значения флагов восстанавливаются всегда.
      *
-     * По завершении вставки принудительно запускается `ANALYZE`: планировщик
-     * опирается на статистику таблицы, а выбор стратегии поиска в `MessageFeed`
-     * читает оценку числа строк из плана — без свежей статистики после массовой
-     * заливки оценка будет неверной, и поиск уйдёт в неоптимальную ветку.
+     * Снимок последнего сообщения в таблице `chats` отдельно не заполняется: его
+     * автоматически поддерживает триггер на `messages` (см. миграцию создания
+     * `chats`), срабатывающий на каждую вставленную пачку.
+     *
+     * По завершении вставки принудительно запускается `ANALYZE` обеих таблиц:
+     * планировщик опирается на статистику, а выбор стратегии поиска в
+     * `MessageFeed` читает оценку числа строк из плана — без свежей статистики
+     * после массовой заливки оценка будет неверной, и запрос уйдёт в неоптимальную
+     * ветку.
      *
      * @param int $total Сколько сообщений вставить
      * @param int $batchSize Размер одной пачки (число строк в одном INSERT)
@@ -91,6 +96,7 @@ class MessageSeeder
             }
 
             $this->db->createCommand('ANALYZE ' . $this->db->quoteTableName('{{%messages}}'))->execute();
+            $this->db->createCommand('ANALYZE ' . $this->db->quoteTableName('{{%chats}}'))->execute();
         } finally {
             $this->db->enableLogging = $enableLogging;
             $this->db->enableProfiling = $enableProfiling;
@@ -98,15 +104,20 @@ class MessageSeeder
     }
 
     /**
-     * Полностью очищает таблицу `messages` и сбрасывает счётчик идентификаторов.
+     * Полностью очищает `messages` и снимок `chats`, сбрасывает счётчик id.
+     *
+     * Триггер на `messages` обновляет `chats` только при вставке, а `TRUNCATE`
+     * вставкой не является, поэтому снимок чистим явно в том же операторе —
+     * иначе после перезаливки в `chats` остались бы записи прошлого прогона.
      *
      * @return void
      * @throws \yii\db\Exception Если очистка завершилась ошибкой
      */
     public function truncate(): void
     {
-        $table = $this->db->quoteTableName('{{%messages}}');
-        $this->db->createCommand('TRUNCATE TABLE ' . $table . ' RESTART IDENTITY')->execute();
+        $messages = $this->db->quoteTableName('{{%messages}}');
+        $chats = $this->db->quoteTableName('{{%chats}}');
+        $this->db->createCommand('TRUNCATE TABLE ' . $messages . ', ' . $chats . ' RESTART IDENTITY')->execute();
     }
 
     /**

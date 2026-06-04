@@ -11,20 +11,25 @@ use yii\db\Connection;
  * Чтение чатов и ленты сообщений с keyset-пагинацией по времени.
  *
  * Сортировка и курсор — по паре `(created_at, id)`: `created_at` задаёт порядок,
- * `id` служит tiebreaker'ом (время не уникально). Список чатов опирается на
- * «loose index scan» по `(chat_id, id)`: рекурсивный CTE перебирает уникальные
- * `chat_id`, а боковое соединение (`LATERAL`) по `(chat_id, created_at, id)`
- * берёт последнее сообщение каждого чата — это исключает скан всей таблицы.
- * Поиск по тексту (`ILIKE`) выбирает стратегию по оценке селективности шаблона
- * (`EXPLAIN`): редкий шаблон отдаём триграммному индексу `pg_trgm` через
- * `DISTINCT ON` (точечный `Bitmap Index Scan`), а частый — тому же боковому
- * перебору чатов с фильтром в `LATERAL` (триграммы тут не отсекают, зато первое
- * же свежее сообщение чата обычно совпадает). В редкой ветке `DISTINCT ON`
- * сортирует только лёгкие ключи `(id, chat_id, created_at)`, а тяжёлый `body`
- * подтягивается `JOIN`'ом по первичному ключу — иначе сортировка десятков тысяч
- * строк с телами переполняет `work_mem` и сбрасывается во временные файлы на
- * диск. Лента внутри чата опирается на тот же `(chat_id, created_at, id)` и
- * всегда упорядочена от новых к старым.
+ * `id` служит tiebreaker'ом (время не уникально).
+ *
+ * Список чатов без поиска читается из денормализованной таблицы `chats` — она
+ * хранит готовый снимок последнего сообщения каждого чата (его поддерживает
+ * триггер на `messages`). Запрос превращается в простой `ORDER BY last_message_at
+ * DESC LIMIT N` по индексу: стоимость не зависит ни от числа чатов, ни от числа
+ * сообщений. Курсор `(created_at, id)` ложится на пару `(last_message_at,
+ * last_message_id)`, поэтому общий keyset-хвост не меняется.
+ *
+ * Поиск по тексту (`ILIKE`) идёт по `messages` и выбирает стратегию по оценке
+ * селективности шаблона (`EXPLAIN`): редкий шаблон отдаём триграммному индексу
+ * `pg_trgm` через `DISTINCT ON` (точечный `Bitmap Index Scan`), а частый —
+ * боковому перебору чатов с фильтром в `LATERAL` (триграммы тут не отсекают,
+ * зато первое же свежее сообщение чата обычно совпадает). В редкой ветке
+ * `DISTINCT ON` сортирует только лёгкие ключи `(id, chat_id, created_at)`, а
+ * тяжёлый `body` подтягивается `JOIN`'ом по первичному ключу — иначе сортировка
+ * десятков тысяч строк с телами переполняет `work_mem` и сбрасывается во
+ * временные файлы на диск. Лента внутри чата опирается на индекс
+ * `(chat_id, created_at, id)` и всегда упорядочена от новых к старым.
  */
 class MessageFeed
 {
@@ -79,19 +84,14 @@ class MessageFeed
     ): array {
         $params = [':limit' => $limit];
 
-        $lateralFilter = '';
-        $sparseSearch = false;
+        $search = '';
         if ($query !== null && $query !== '') {
             $like = '%' . $this->dbHelper->escapeLike($query) . '%';
             $params[':q'] = $like;
-            if ($this->estimateMatches($like) > self::SEARCH_DENSE_THRESHOLD) {
-                $lateralFilter = ' AND m.body ILIKE :q';
-            } else {
-                $sparseSearch = true;
-            }
+            $search = $this->estimateMatches($like) > self::SEARCH_DENSE_THRESHOLD ? 'dense' : 'sparse';
         }
 
-        if ($sparseSearch) {
+        if ($search === 'sparse') {
             $sql = 'WITH keys AS ('
                 . 'SELECT DISTINCT ON (m.chat_id) m.id, m.chat_id, m.created_at'
                 . ' FROM {{%messages}} m WHERE m.body ILIKE :q'
@@ -99,7 +99,7 @@ class MessageFeed
                 . '), latest AS ('
                 . 'SELECT k.id, k.chat_id, mm.user_id, mm.body, k.created_at'
                 . ' FROM keys k JOIN {{%messages}} mm ON mm.id = k.id)';
-        } else {
+        } elseif ($search === 'dense') {
             $sql = 'WITH RECURSIVE ids AS ('
                 . '(SELECT chat_id FROM {{%messages}} ORDER BY chat_id LIMIT 1)'
                 . ' UNION ALL '
@@ -109,9 +109,13 @@ class MessageFeed
                 . 'SELECT l.id, l.chat_id, l.user_id, l.body, l.created_at FROM ids i'
                 . ' CROSS JOIN LATERAL ('
                 . 'SELECT m.id, m.chat_id, m.user_id, m.body, m.created_at FROM {{%messages}} m'
-                . ' WHERE m.chat_id = i.chat_id' . $lateralFilter
+                . ' WHERE m.chat_id = i.chat_id AND m.body ILIKE :q'
                 . ' ORDER BY m.created_at DESC, m.id DESC LIMIT 1'
                 . ') l WHERE i.chat_id IS NOT NULL)';
+        } else {
+            $sql = 'WITH latest AS ('
+                . 'SELECT last_message_id AS id, id AS chat_id, last_user_id AS user_id,'
+                . ' last_body AS body, last_message_at AS created_at FROM {{%chats}})';
         }
 
         $reverse = false;
