@@ -2,4 +2,6 @@
 
 declare(strict_types=1);
 
-return [];
+return [
+    'webhookSecret' => getenv('WEBHOOK_SECRET') ?: 'dev-secret-change-me',
+];
