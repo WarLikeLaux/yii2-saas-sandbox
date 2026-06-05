@@ -9,7 +9,6 @@ use app\assets\AppAsset;
 use app\widgets\Alert;
 use yii\bootstrap5\Breadcrumbs;
 use yii\bootstrap5\Html;
-use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
 
 AppAsset::register($this);
@@ -60,19 +59,7 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
     NavBar::begin([
         'brandLabel' => '<i class="bi bi-box-seam me-2"></i>' . Html::encode(Yii::$app->name),
         'brandUrl' => Yii::$app->homeUrl,
-        'options' => ['class' => 'navbar-expand-md navbar-dark bg-dark fixed-top shadow-sm'],
-    ]);
-    echo Nav::widget([
-        'options' => ['class' => 'navbar-nav ms-auto'],
-        'encodeLabels' => false,
-        'items' => [
-            ['label' => '<i class="bi bi-house-door me-1"></i>Главная', 'url' => ['/site/index']],
-            ['label' => '<i class="bi bi-activity me-1"></i>Состояние', 'url' => ['/health']],
-            ['label' => '<i class="bi bi-chat-dots me-1"></i>Чаты', 'url' => ['/message/index']],
-            ['label' => '<i class="bi bi-book me-1"></i>Документация', 'url' => '/docs/', 'linkOptions' => ['target' => '_blank', 'rel' => 'noopener']],
-            ['label' => '<i class="bi bi-arrow-left-right me-1"></i>RabbitMQ', 'url' => 'http://localhost:15672', 'linkOptions' => ['target' => '_blank', 'rel' => 'noopener']],
-            ['label' => '<i class="bi bi-database-gear me-1"></i>Adminer', 'url' => 'http://localhost:8080', 'linkOptions' => ['target' => '_blank', 'rel' => 'noopener']],
-        ],
+        'options' => ['class' => 'navbar-dark bg-dark fixed-top shadow-sm'],
     ]);
     NavBar::end();
     ?>
