@@ -6,6 +6,7 @@ $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
 $redis = require __DIR__ . '/redis.php';
 $queue = require __DIR__ . '/queue.php';
+$mutex = require __DIR__ . '/mutex.php';
 
 $config = [
     'id' => 'basic',
@@ -23,6 +24,7 @@ $config = [
         ],
         'redis' => $redis,
         'queue' => $queue,
+        'mutex' => $mutex,
         'cache' => [
             'class' => 'yii\redis\Cache',
         ],
