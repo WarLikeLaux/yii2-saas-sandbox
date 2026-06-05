@@ -32,6 +32,23 @@ $config = [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
                 ],
+                [
+                    'class' => app\components\JsonLogTarget::class,
+                    'logFile' => '@runtime/logs/app.json.log',
+                    'levels' => ['error', 'warning', 'info'],
+                    'except' => ['yii\db\*'],
+                    'logVars' => [],
+                    'correlationIdResolver' => static function () {
+                        return Yii::$container->get(app\components\CorrelationContext::class)->get();
+                    },
+                ],
+                [
+                    'class' => app\components\SentryTarget::class,
+                    'levels' => ['error'],
+                    'sentryResolver' => static function () {
+                        return Yii::$container->get(app\services\SentryService::class);
+                    },
+                ],
             ],
         ],
         'db' => $db,
