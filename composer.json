@@ -20,7 +20,8 @@
         "enqueue/amqp-lib": "0.10.19",
         "enqueue/amqp-tools": "0.10.19",
         "enqueue/dsn": "0.10.19",
-        "twbs/bootstrap-icons": "1.11.3"
+        "twbs/bootstrap-icons": "1.11.3",
+        "sentry/sentry": "^3.0"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
