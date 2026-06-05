@@ -1,0 +1,29 @@
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "output": {
+    "filePath": "repomix-output.md",
+    "style": "markdown",
+    "headerText": "SaaS Sandbox (Yii2, PHP 7.4) — полный срез исходного кода проекта.",
+    "fileSummary": true,
+    "directoryStructure": true,
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "showLineNumbers": false
+  },
+  "include": [],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "composer.lock",
+      "runtime/**",
+      "web/assets/**",
+      "vagrant/**",
+      "Vagrantfile",
+      ".vagrant/**",
+      "tools/*.phar",
+      "*.cache",
+      "repomix-output.*"
+    ]
+  }
+}

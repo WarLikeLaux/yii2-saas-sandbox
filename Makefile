@@ -5,7 +5,7 @@ export UID := $(shell id -u)
 export GID := $(shell id -g)
 
 .DEFAULT_GOAL := help
-.PHONY: help up down build install shell health migrate env logs dev cs cs-check rector rector-check analyze test audit docs ci
+.PHONY: help up down build install shell health migrate env logs dev cs cs-check rector rector-check analyze test audit docs ci repomix
 
 DOCTUM_PHAR ?= tools/doctum.phar
 DOCTUM_VERSION ?= 5.5
@@ -72,3 +72,7 @@ docs: ## сгенерировать API-документацию через Doct
 	$(PHP) php $(DOCTUM_PHAR) update docs/doctum.php --ignore-parse-errors
 
 ci: cs-check analyze rector-check test audit ## полный гейт (как в CI): стиль + анализ + рефакторинг + тесты + аудит
+
+repomix: ## собрать исходники проекта в один файл (repomix-output.md, настройки в repomix.config.json)
+	npx --yes repomix
+	@echo "Готово: repomix-output.md"

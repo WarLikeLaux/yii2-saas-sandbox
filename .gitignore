@@ -19,3 +19,4 @@ tests/_support/_generated
 /docs/api/
 /docs/.doctum-cache/
 /tools/doctum.phar
+/repomix-output.*
